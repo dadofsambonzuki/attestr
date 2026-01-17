@@ -30,9 +30,10 @@ Each of which are prior art wrt this WoTathon.
 - [ ] Publish attestations about any other Nostr event
 - [ ] View and filter attestations by subject kind, attestor, validity status
 - [ ] NIP-22 comments and NIP-57 zaps on attestation events
+- [ ] Investigate use of lists and decentralised lists within the Attestation NIP.
 
 ### Phase 2: Attestations Marketplace
 - [ ] Request attestations from specific attestors
-- [ ] Discover attestors by proficiency declarations and recommendations
+- [ ] Discover attestors by proficiency declarations, recommendations and WoT Scores / Grapevine.
 - [ ] Integration with verification service providers (meatspacestr, proof-of-person, NIP-39 social proofs)
 - [ ] Payment flows & marketplace economics
