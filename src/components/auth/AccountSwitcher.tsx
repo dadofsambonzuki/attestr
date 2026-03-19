@@ -1,7 +1,8 @@
 // NOTE: This file is stable and usually should not be modified.
 // It is important that all functionality in this file is preserved, and should only be modified if explicitly requested.
 
-import { ChevronDown, LogOut, UserIcon, UserPlus } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, LogOut, Settings2, UserIcon, UserPlus } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +13,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { useLoggedInAccounts, type Account } from '@/hooks/useLoggedInAccounts';
 import { genUserName } from '@/lib/genUserName';
+import { RelayListManager } from '@/components/RelayListManager';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface AccountSwitcherProps {
   onAddAccountClick: () => void;
@@ -19,6 +28,7 @@ interface AccountSwitcherProps {
 
 export function AccountSwitcher({ onAddAccountClick }: AccountSwitcherProps) {
   const { currentUser, otherUsers, setLogin, removeLogin } = useLoggedInAccounts();
+  const [relayDialogOpen, setRelayDialogOpen] = useState(false);
 
   if (!currentUser) return null;
 
@@ -60,6 +70,16 @@ export function AccountSwitcher({ onAddAccountClick }: AccountSwitcherProps) {
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault();
+            setRelayDialogOpen(true);
+          }}
+          className='flex items-center gap-2 cursor-pointer p-2 rounded-md'
+        >
+          <Settings2 className='w-4 h-4' />
+          <span>Relay Selector</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
           onClick={onAddAccountClick}
           className='flex items-center gap-2 cursor-pointer p-2 rounded-md'
         >
@@ -74,6 +94,18 @@ export function AccountSwitcher({ onAddAccountClick }: AccountSwitcherProps) {
           <span>Log out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      <Dialog open={relayDialogOpen} onOpenChange={setRelayDialogOpen}>
+        <DialogContent className='sm:max-w-2xl'>
+          <DialogHeader>
+            <DialogTitle>Relay Selector</DialogTitle>
+            <DialogDescription>
+              Manage read and write relays for your profile.
+            </DialogDescription>
+          </DialogHeader>
+          <RelayListManager />
+        </DialogContent>
+      </Dialog>
     </DropdownMenu>
   );
 }

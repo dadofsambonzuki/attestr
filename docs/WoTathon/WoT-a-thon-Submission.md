@@ -25,12 +25,14 @@ Each of which are prior art wrt this WoTathon.
 
 ## Roadmap & Future Scope
 
-### Phase 1: Attestation Viewer & Publisher
-- [ ] Dedicated relay setup (relay.attestr.xyz)
+### Phase 1a: Attestation Viewer & Publisher
 - [ ] Publish attestations about any other Nostr event
 - [ ] View and filter attestations by subject kind, attestor, validity status
 - [ ] NIP-22 comments and NIP-57 zaps on attestation events
 - [ ] Investigate use of lists and decentralised lists within the Attestation NIP.
+
+### Phase 1b
+- [ ] Dedicated relay setup (relay.attestr.xyz)
 
 ### Phase 2: Attestations Marketplace
 - [ ] Request attestations from specific attestors
