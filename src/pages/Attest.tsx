@@ -4,7 +4,7 @@ import { AttestrWorkspace } from '@/components/attestr/AttestrWorkspace';
 
 export default function Attest() {
   useSeoMeta({
-    title: 'Attestr Workspace',
+    title: 'Attestr',
     description: 'Search assertion events and publish attestations on Nostr.',
   });
 

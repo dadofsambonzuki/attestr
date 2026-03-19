@@ -17,7 +17,7 @@ export default function AttestationEventPage() {
   const { nostr } = useNostr();
 
   useSeoMeta({
-    title: 'Attestr Attestation',
+    title: 'Attestr',
     description: 'View an attestation event with lifecycle details and discussion.',
   });
 

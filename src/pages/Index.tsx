@@ -8,7 +8,7 @@ import { AppHeader } from '@/components/AppHeader';
 
 const Index = () => {
   useSeoMeta({
-    title: 'Attestr - Notaries on Nostr',
+    title: 'Attestr',
     description: 'Search assertions, publish attestations, and inspect trust signals with comments and zaps.',
   });
 

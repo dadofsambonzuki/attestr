@@ -1,9 +1,14 @@
 import { nip19 } from 'nostr-tools';
+import { useSeoMeta } from '@unhead/react';
 import { useParams } from 'react-router-dom';
 import NotFound from './NotFound';
 
 export function NIP19Page() {
   const { nip19: identifier } = useParams<{ nip19: string }>();
+
+  useSeoMeta({
+    title: 'Attestr',
+  });
 
   if (!identifier) {
     return <NotFound />;

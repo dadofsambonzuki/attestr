@@ -11,7 +11,7 @@ const attestationNipUrl = 'https://nostrhub.io/naddr1qvzqqqrcvypzp384u7n44r8rdq7
 
 export default function Developers() {
   useSeoMeta({
-    title: 'Attestr for Developers',
+    title: 'Attestr',
     description: 'How to publish and render Nostr attestations, with tags, filters, and implementation examples.',
   });
 

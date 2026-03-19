@@ -5,7 +5,7 @@ import { AttestationsWorkspace } from '@/components/attestr/AttestationsWorkspac
 
 export default function Attestations() {
   useSeoMeta({
-    title: 'Attestr Attestations',
+    title: 'Attestr',
     description: 'Search, filter, and inspect attestation events on Nostr.',
   });
 

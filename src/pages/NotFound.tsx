@@ -6,7 +6,7 @@ const NotFound = () => {
   const location = useLocation();
 
   useSeoMeta({
-    title: "404 - Page Not Found",
+    title: 'Attestr',
     description: "The page you are looking for could not be found. Return to the home page to continue browsing.",
   });
 
