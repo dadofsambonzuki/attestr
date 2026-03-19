@@ -97,7 +97,7 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <p className="text-sm font-medium">Attestor {event.pubkey.slice(0, 12)}…</p>
           <p className="text-xs text-muted-foreground">{new Date(event.created_at * 1000).toLocaleString()}</p>
         </div>
@@ -108,24 +108,29 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="grid gap-1 text-sm">
+        <div className="grid min-w-0 gap-1 text-sm">
           <p>
             Assertion kind: <span className="font-medium">{assertion?.kind ?? 'Unknown'}</span>
           </p>
-          <p className="text-muted-foreground">
-            Assertion ref: {parsed.assertionRef ? `${parsed.assertionRef.type}:${parsed.assertionRef.value.slice(0, 32)}...` : 'Missing'}
+          <p className="break-all text-muted-foreground">
+            Assertion ref: {parsed.assertionRef ? `${parsed.assertionRef.type}:${parsed.assertionRef.value}` : 'Missing'}
           </p>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground break-words">
             Validity window: {parsed.validFrom ? new Date(parsed.validFrom * 1000).toLocaleString() : 'open'} - {parsed.validTo ? new Date(parsed.validTo * 1000).toLocaleString() : 'open'}
           </p>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <AttestationCardStats event={event} />
 
-          <AttestationDetailSheet attestation={event} assertion={assertion} onUpdated={onUpdated}>
-            <Button variant="outline" size="sm">Open details</Button>
-          </AttestationDetailSheet>
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+            <Button asChild variant="ghost" size="sm">
+              <a href={`/attestations/${event.id}`}>Permalink</a>
+            </Button>
+            <AttestationDetailSheet attestation={event} assertion={assertion} onUpdated={onUpdated}>
+              <Button variant="outline" size="sm">Open details</Button>
+            </AttestationDetailSheet>
+          </div>
         </div>
       </CardContent>
     </Card>
