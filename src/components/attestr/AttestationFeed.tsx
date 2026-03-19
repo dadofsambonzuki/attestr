@@ -12,11 +12,25 @@ import { AttestationCardStats } from './AttestationCardStats';
 
 interface AttestationFeedProps {
   filters: AttestationFeedFilters;
+  runKey?: number;
 }
 
-export function AttestationFeed({ filters }: AttestationFeedProps) {
-  const { data: attestations = [], isLoading, refetch } = useAttestationFeed(filters);
+export function AttestationFeed({ filters, runKey = 0 }: AttestationFeedProps) {
+  const { data: attestations = [], isLoading, refetch } = useAttestationFeed(filters, runKey);
   const { data: assertionData } = useAssertionEvents(attestations);
+
+  const filteredAttestations = filters.assertionKind && assertionData
+    ? attestations.filter((attestation) => {
+        const parsed = parseAttestation(attestation);
+        if (!parsed.assertionRef) return false;
+        const assertion = parsed.assertionRef.type === 'e'
+          ? assertionData.byId[parsed.assertionRef.value]
+          : parsed.assertionRef.type === 'a'
+            ? assertionData.byAddress[parsed.assertionRef.value]
+            : undefined;
+        return assertion?.kind === filters.assertionKind;
+      })
+    : attestations;
 
   if (isLoading) {
     return (
@@ -36,7 +50,7 @@ export function AttestationFeed({ filters }: AttestationFeedProps) {
     );
   }
 
-  if (attestations.length === 0) {
+  if (filteredAttestations.length === 0) {
     return (
       <Card className="border-dashed">
         <CardContent className="py-10 text-center text-muted-foreground">
@@ -48,7 +62,7 @@ export function AttestationFeed({ filters }: AttestationFeedProps) {
 
   return (
     <div className="space-y-4">
-      {attestations.map((attestation) => {
+      {filteredAttestations.map((attestation) => {
         const parsed = parseAttestation(attestation);
         const assertion = parsed.assertionRef
           ? parsed.assertionRef.type === 'e'

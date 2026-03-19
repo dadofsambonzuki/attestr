@@ -3,21 +3,29 @@ import { useNostr } from '@nostrify/react';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 import { ATTESTATION_KIND } from '@/lib/attestation';
+import { resolveAuthorInput } from '@/lib/nostrIdentity';
 
 export interface AttestationFeedFilters {
   attestor: string;
   status: string;
+  assertionKind?: number;
 }
 
-export function useAttestationFeed(filters: AttestationFeedFilters, limit = 120) {
+export function useAttestationFeed(filters: AttestationFeedFilters, runKey = 0, limit = 120) {
   const { nostr } = useNostr();
 
   return useQuery({
-    queryKey: ['nostr', 'attestation-feed', filters, limit],
+    queryKey: ['nostr', 'attestation-feed', filters, limit, runKey],
     queryFn: async () => {
+      let authors: string[] | undefined;
+      if (filters.attestor) {
+        const resolved = await resolveAuthorInput(filters.attestor);
+        if (resolved) authors = [resolved];
+      }
+
       const baseFilter = {
         kinds: [ATTESTATION_KIND],
-        authors: filters.attestor ? [filters.attestor] : undefined,
+        authors,
         '#s': filters.status ? [filters.status] : undefined,
         limit,
       };
