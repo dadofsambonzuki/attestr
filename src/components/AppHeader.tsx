@@ -9,7 +9,7 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
+        <NavLink to="/" className="flex items-center gap-3 rounded-md p-1 transition hover:bg-slate-100/80">
           <img
             src="/images/attestr-icon.png"
             alt="Attestr"
@@ -19,7 +19,7 @@ export function AppHeader() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Attestr</p>
             <p className="text-sm font-medium text-slate-700">Notaries on Nostr</p>
           </div>
-        </div>
+        </NavLink>
 
         <nav className="flex items-center gap-2 text-sm">
           <NavLink
