@@ -11,8 +11,7 @@ import { useEventSearch } from '@/hooks/useEventSearch';
 import { AttestAssertionDialog } from './AttestAssertionDialog';
 
 interface AssertionSearchPanelProps {
-  selected?: NostrEvent;
-  onSelect: (event: NostrEvent) => void;
+  onSelect?: (event: NostrEvent) => void;
 }
 
 const timeRanges = [
@@ -23,7 +22,6 @@ const timeRanges = [
 ];
 
 export function AssertionSearchPanel({
-  selected,
   onSelect,
 }: AssertionSearchPanelProps) {
   const [queryInput, setQueryInput] = useState('');
@@ -119,13 +117,12 @@ export function AssertionSearchPanel({
             <p className="text-sm text-muted-foreground">No assertion events found yet.</p>
           ) : (
             events.map((event) => {
-              const isSelected = selected?.id === event.id;
               return (
                 <button
                   key={event.id}
                   type="button"
-                  className={`w-full rounded-md border p-3 text-left transition ${isSelected ? 'border-primary bg-primary/5' : 'hover:bg-muted/40'}`}
-                  onClick={() => onSelect(event)}
+                  className="w-full rounded-md border p-3 text-left transition hover:bg-muted/40"
+                  onClick={() => onSelect?.(event)}
                 >
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>kind {event.kind}</span>
@@ -143,7 +140,7 @@ export function AssertionSearchPanel({
                       size="sm"
                       onClick={(buttonEvent) => {
                         buttonEvent.stopPropagation();
-                        onSelect(event);
+                        onSelect?.(event);
                         setAttestTarget(event);
                         setAttestDialogOpen(true);
                       }}
