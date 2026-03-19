@@ -20,14 +20,6 @@ export function AppHeader() {
 
         <nav className="flex flex-wrap items-center gap-2 text-sm md:justify-center">
           <NavLink
-            to="/"
-            className={({ isActive }) =>
-              `inline-flex h-10 min-w-[5.75rem] items-center justify-center rounded-md px-3 py-2 transition sm:min-w-[7.5rem] ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
-            }
-          >
-            Home
-          </NavLink>
-          <NavLink
             to="/attest"
             className={({ isActive }) =>
               `inline-flex h-10 min-w-[5.75rem] items-center justify-center rounded-md px-3 py-2 transition sm:min-w-[7.5rem] ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
