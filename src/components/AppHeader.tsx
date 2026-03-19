@@ -1,19 +1,16 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 import { LoginArea } from '@/components/auth/LoginArea';
 
 export function AppHeader() {
-  const location = useLocation();
-  const isHome = location.pathname === '/';
-
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-3 px-4 py-3 sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
         <NavLink to="/" className="flex items-center gap-3 rounded-md p-1 transition hover:bg-slate-100/80">
           <img
             src="/images/attestr-icon.png"
             alt="Attestr"
-            className={`${isHome ? 'h-12 w-12' : 'h-10 w-10'} rounded-xl border border-slate-200 object-cover transition-all`}
+            className="h-10 w-10 rounded-xl border border-slate-200 object-cover"
           />
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Attestr</p>
@@ -21,11 +18,11 @@ export function AppHeader() {
           </div>
         </NavLink>
 
-        <nav className="flex items-center gap-2 text-sm">
+        <nav className="flex items-center gap-2 text-sm md:justify-center">
           <NavLink
             to="/"
             className={({ isActive }) =>
-              `rounded-md px-3 py-2 transition ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
+              `inline-flex h-10 min-w-[7.5rem] items-center justify-center rounded-md px-3 py-2 transition ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
             }
           >
             Home
@@ -33,7 +30,7 @@ export function AppHeader() {
           <NavLink
             to="/attest"
             className={({ isActive }) =>
-              `rounded-md px-3 py-2 transition ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
+              `inline-flex h-10 min-w-[7.5rem] items-center justify-center rounded-md px-3 py-2 transition ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
             }
           >
             Attest
@@ -41,14 +38,16 @@ export function AppHeader() {
           <NavLink
             to="/attestations"
             className={({ isActive }) =>
-              `rounded-md px-3 py-2 transition ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
+              `inline-flex h-10 min-w-[7.5rem] items-center justify-center rounded-md px-3 py-2 transition ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
             }
           >
             Attestations
           </NavLink>
         </nav>
 
-        <LoginArea className="w-full sm:w-auto" />
+        <div className="flex min-h-11 md:justify-end">
+          <LoginArea className="w-full md:w-[260px]" />
+        </div>
       </div>
     </header>
   );
