@@ -43,6 +43,14 @@ export function AppHeader() {
           >
             Attestations
           </NavLink>
+          <NavLink
+            to="/developers"
+            className={({ isActive }) =>
+              `inline-flex h-10 min-w-[5.75rem] items-center justify-center rounded-md px-3 py-2 transition sm:min-w-[7.5rem] ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
+            }
+          >
+            Developers
+          </NavLink>
         </nav>
 
         <div className="flex min-h-11 md:justify-end">
