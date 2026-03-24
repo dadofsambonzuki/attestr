@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { NoteContent } from '@/components/NoteContent';
 import { getEventViewerUrl } from '@/lib/viewers';
+import { encodeEventPointer } from '@/lib/nostrEncodings';
 
 interface AssertionPreviewProps {
   event?: NostrEvent;
@@ -28,7 +29,7 @@ export function AssertionPreview({ event, fallbackLabel = 'Assertion event unava
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span>Kind {event.kind}</span>
           <span>•</span>
-          <span className="font-mono">{event.id.slice(0, 12)}…</span>
+          <span className="font-mono break-all">{encodeEventPointer(event)}</span>
           <span>•</span>
           <span>{new Date(event.created_at * 1000).toLocaleString()}</span>
         </div>

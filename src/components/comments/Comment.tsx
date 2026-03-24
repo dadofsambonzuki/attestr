@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { NostrEvent } from '@nostrify/nostrify';
-import { nip19 } from 'nostr-tools';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useComments } from '@/hooks/useComments';
 import { CommentForm } from './CommentForm';
@@ -13,7 +12,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MessageSquare, ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { genUserName } from '@/lib/genUserName';
+import { encodeNpub } from '@/lib/nostrEncodings';
+import { getNostrDisplayName } from '@/lib/nostrDisplay';
 
 interface CommentProps {
   root: NostrEvent | URL | `#${string}`;
@@ -29,9 +29,10 @@ export function Comment({ root, comment, depth = 0, maxDepth = 3, limit }: Comme
   
   const author = useAuthor(comment.pubkey);
   const { data: commentsData } = useComments(root, limit);
-  
+
   const metadata = author.data?.metadata;
-  const displayName = metadata?.name ?? genUserName(comment.pubkey)
+  const displayName = getNostrDisplayName(metadata, comment.pubkey);
+  const npub = encodeNpub(comment.pubkey);
   const timeAgo = formatDistanceToNow(new Date(comment.created_at * 1000), { addSuffix: true });
 
   // Get direct replies to this comment
@@ -46,7 +47,7 @@ export function Comment({ root, comment, depth = 0, maxDepth = 3, limit }: Comme
             {/* Comment Header */}
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3">
-                <Link to={`/${nip19.npubEncode(comment.pubkey)}`}>
+                <Link to={`/${npub}`}>
                   <Avatar className="h-8 w-8 hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer">
                     <AvatarImage src={metadata?.picture} />
                     <AvatarFallback className="text-xs">
@@ -56,11 +57,12 @@ export function Comment({ root, comment, depth = 0, maxDepth = 3, limit }: Comme
                 </Link>
                 <div>
                   <Link 
-                    to={`/${nip19.npubEncode(comment.pubkey)}`}
+                    to={`/${npub}`}
                     className="font-medium text-sm hover:text-primary transition-colors"
                   >
                     {displayName}
                   </Link>
+                  <p className="text-[11px] font-mono text-muted-foreground break-all">{npub}</p>
                   <p className="text-xs text-muted-foreground">{timeAgo}</p>
                 </div>
               </div>

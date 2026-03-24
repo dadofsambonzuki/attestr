@@ -3,8 +3,9 @@ import { type NostrEvent } from '@nostrify/nostrify';
 import { Link } from 'react-router-dom';
 import { nip19 } from 'nostr-tools';
 import { useAuthor } from '@/hooks/useAuthor';
-import { genUserName } from '@/lib/genUserName';
+import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { cn } from '@/lib/utils';
+import { encodeNpub } from '@/lib/nostrEncodings';
 
 interface NoteContentProps {
   event: NostrEvent;
@@ -122,9 +123,9 @@ export function NoteContent({
 // Helper component to display user mentions
 function NostrMention({ pubkey }: { pubkey: string }) {
   const author = useAuthor(pubkey);
-  const npub = nip19.npubEncode(pubkey);
+  const npub = encodeNpub(pubkey);
   const hasRealName = !!author.data?.metadata?.name;
-  const displayName = author.data?.metadata?.name ?? genUserName(pubkey);
+  const displayName = getNostrDisplayName(author.data?.metadata, pubkey);
 
   return (
     <Link 

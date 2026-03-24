@@ -9,6 +9,8 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import { parseAttestation, type AttestationStatus } from '@/lib/attestation';
+import { NostrName } from '@/components/nostr/NostrName';
+import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
 import { AssertionPreview } from './AssertionPreview';
 
 interface AttestationDetailContentProps {
@@ -26,6 +28,8 @@ const lifecycleActions: { label: string; status: AttestationStatus; validity?: '
 
 export function AttestationDetailContent({ attestation, assertion, onUpdated }: AttestationDetailContentProps) {
   const parsed = parseAttestation(attestation);
+  const attestationPointer = encodeEventPointer(attestation);
+  const attestorNpub = encodeNpub(attestation.pubkey);
   const { user } = useCurrentUser();
   const { mutateAsync: publishEvent, isPending } = useNostrPublish();
   const { toast } = useToast();
@@ -34,12 +38,10 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated }: 
 
   const details = useMemo(() => {
     return [
-      { label: 'Event id', value: attestation.id },
       { label: 'Status', value: parsed.status ?? 'unknown' },
       { label: 'Validity', value: parsed.validity ?? 'n/a' },
       { label: 'Valid from', value: parsed.validFrom ? new Date(parsed.validFrom * 1000).toLocaleString() : 'n/a' },
       { label: 'Valid to', value: parsed.validTo ? new Date(parsed.validTo * 1000).toLocaleString() : 'n/a' },
-      { label: 'Attestor', value: attestation.pubkey },
       { label: 'Created', value: new Date(attestation.created_at * 1000).toLocaleString() },
       { label: 'd tag', value: parsed.d ?? 'n/a' },
     ];
@@ -78,8 +80,8 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated }: 
   return (
     <div className="mt-2 space-y-6">
       <div className="rounded-md border bg-muted/30 p-3">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">Attestation event id</p>
-        <p className="mt-1 break-all font-mono text-xs text-foreground">{attestation.id}</p>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">Attestation event pointer</p>
+        <p className="mt-1 break-all font-mono text-xs text-foreground">{attestationPointer}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -88,6 +90,11 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated }: 
       </div>
 
       <div className="grid gap-3 rounded-md border p-4">
+        <div className="grid gap-1">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Attestor</p>
+          <p className="text-sm"><NostrName pubkey={attestation.pubkey} /></p>
+          <p className="break-all font-mono text-xs text-muted-foreground">{attestorNpub}</p>
+        </div>
         {details.map((item) => (
           <div key={item.label} className="grid gap-1">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.label}</p>

@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { encodeEventPointer } from '@/lib/nostrEncodings';
 import { AttestationPublishForm } from './AttestationPublishForm';
 
 interface AttestAssertionDialogProps {
@@ -22,7 +23,7 @@ export function AttestAssertionDialog({ assertionEvent, open, onOpenChange }: At
         <DialogHeader>
           <DialogTitle>Attest assertion event</DialogTitle>
           <DialogDescription>
-            Kind {assertionEvent?.kind ?? 'unknown'} • {assertionEvent?.id.slice(0, 16) ?? 'unknown'}...
+            Kind {assertionEvent?.kind ?? 'unknown'} • {assertionEvent ? encodeEventPointer(assertionEvent) : 'unknown'}
           </DialogDescription>
         </DialogHeader>
 

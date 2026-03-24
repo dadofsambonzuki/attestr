@@ -3,7 +3,8 @@ import { useConversationMessages } from '@/hooks/useConversationMessages';
 import { useDMContext } from '@/hooks/useDMContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuthor } from '@/hooks/useAuthor';
-import { genUserName } from '@/lib/genUserName';
+import { getNostrDisplayName } from '@/lib/nostrDisplay';
+import { encodeNpub } from '@/lib/nostrEncodings';
 import { MESSAGE_PROTOCOL, PROTOCOL_MODE, type MessageProtocol } from '@/lib/dmConstants';
 import { formatConversationTime, formatFullDateTime } from '@/lib/dmUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -156,7 +157,8 @@ const ChatHeader = ({ pubkey, onBack }: { pubkey: string; onBack?: () => void })
   const author = useAuthor(pubkey);
   const metadata = author.data?.metadata;
 
-  const displayName = metadata?.name || genUserName(pubkey);
+  const displayName = getNostrDisplayName(metadata, pubkey);
+  const npub = encodeNpub(pubkey);
   const avatarUrl = metadata?.picture;
   const initials = displayName.slice(0, 2).toUpperCase();
 
@@ -180,9 +182,7 @@ const ChatHeader = ({ pubkey, onBack }: { pubkey: string; onBack?: () => void })
       
       <div className="flex-1 min-w-0">
         <h2 className="font-semibold truncate">{displayName}</h2>
-        {metadata?.nip05 && (
-          <p className="text-xs text-muted-foreground truncate">{metadata.nip05}</p>
-        )}
+        <p className="text-xs text-muted-foreground truncate">{metadata?.nip05 ?? npub}</p>
       </div>
     </div>
   );

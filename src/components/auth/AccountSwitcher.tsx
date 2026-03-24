@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx';
 import { useLoggedInAccounts, type Account } from '@/hooks/useLoggedInAccounts';
-import { genUserName } from '@/lib/genUserName';
+import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { RelayListManager } from '@/components/RelayListManager';
 import {
   Dialog,
@@ -33,7 +33,7 @@ export function AccountSwitcher({ onAddAccountClick }: AccountSwitcherProps) {
   if (!currentUser) return null;
 
   const getDisplayName = (account: Account): string => {
-    return account.metadata.name ?? genUserName(account.pubkey);
+    return getNostrDisplayName(account.metadata, account.pubkey);
   }
 
   return (

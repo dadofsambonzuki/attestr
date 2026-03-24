@@ -2,7 +2,7 @@ import { useMemo, useState, memo } from 'react';
 import { AlertTriangle, Info, Loader2 } from 'lucide-react';
 import { useDMContext } from '@/hooks/useDMContext';
 import { useAuthor } from '@/hooks/useAuthor';
-import { genUserName } from '@/lib/genUserName';
+import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { formatConversationTime, formatFullDateTime } from '@/lib/dmUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { LOADING_PHASES } from '@/lib/dmConstants';
+import { encodeNpub } from '@/lib/nostrEncodings';
 
 interface DMConversationListProps {
   selectedPubkey: string | null;
@@ -40,7 +41,8 @@ const ConversationItemComponent = ({
   const author = useAuthor(pubkey);
   const metadata = author.data?.metadata;
 
-  const displayName = metadata?.name || genUserName(pubkey);
+  const displayName = getNostrDisplayName(metadata, pubkey);
+  const npub = encodeNpub(pubkey);
   const avatarUrl = metadata?.picture;
   const initials = displayName.slice(0, 2).toUpperCase();
 
@@ -106,9 +108,8 @@ const ConversationItemComponent = ({
             </TooltipProvider>
           </div>
           
-          <p className="text-sm text-muted-foreground truncate">
-            {lastMessagePreview}
-          </p>
+          <p className="text-sm text-muted-foreground truncate">{lastMessagePreview}</p>
+          <p className="text-xs text-muted-foreground/80 truncate">{metadata?.nip05 ?? npub}</p>
         </div>
       </div>
     </button>

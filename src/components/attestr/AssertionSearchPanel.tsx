@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEventSearch } from '@/hooks/useEventSearch';
+import { encodeEventPointer } from '@/lib/nostrEncodings';
 import { AttestAssertionDialog } from './AttestAssertionDialog';
 
 interface AssertionSearchPanelProps {
@@ -129,7 +130,7 @@ export function AssertionSearchPanel({
                     <span>•</span>
                     <span>{new Date(event.created_at * 1000).toLocaleString()}</span>
                     <span>•</span>
-                    <span className="font-mono">{event.id.slice(0, 16)}...</span>
+                    <span className="font-mono break-all">{encodeEventPointer(event)}</span>
                   </div>
 
                   <p className="mt-2 text-sm break-words">{event.content || 'No content'}</p>

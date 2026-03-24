@@ -9,6 +9,8 @@ import { parseAttestation } from '@/lib/attestation';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
 import { AttestationDetailSheet } from './AttestationDetailSheet';
 import { AttestationCardStats } from './AttestationCardStats';
+import { NostrName } from '@/components/nostr/NostrName';
+import { encodeAssertionRef, encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
 
 interface AttestationFeedProps {
   filters: AttestationFeedFilters;
@@ -93,12 +95,16 @@ interface AttestationCardProps {
 
 function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) {
   const parsed = parseAttestation(event);
+  const attestorNpub = encodeNpub(event.pubkey);
+  const attestationPointer = encodeEventPointer(event);
+  const assertionRef = parsed.assertionRef ? encodeAssertionRef(parsed.assertionRef) : 'Missing';
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div className="min-w-0 space-y-1">
-          <p className="text-sm font-medium">Attestor {event.pubkey.slice(0, 12)}…</p>
+          <p className="text-sm font-medium">Attestor <NostrName pubkey={event.pubkey} /></p>
+          <p className="font-mono text-xs text-muted-foreground break-all">{attestorNpub}</p>
           <p className="text-xs text-muted-foreground">{new Date(event.created_at * 1000).toLocaleString()}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -113,7 +119,7 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
             Assertion kind: <span className="font-medium">{assertion?.kind ?? 'Unknown'}</span>
           </p>
           <p className="break-all text-muted-foreground">
-            Assertion ref: {parsed.assertionRef ? `${parsed.assertionRef.type}:${parsed.assertionRef.value}` : 'Missing'}
+            Assertion ref: <span className="font-mono">{assertionRef}</span>
           </p>
           <p className="text-muted-foreground break-words">
             Validity window: {parsed.validFrom ? new Date(parsed.validFrom * 1000).toLocaleString() : 'open'} - {parsed.validTo ? new Date(parsed.validTo * 1000).toLocaleString() : 'open'}
@@ -125,7 +131,7 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
 
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
             <Button asChild variant="ghost" size="sm">
-              <a href={`/attestations/${event.id}`}>Permalink</a>
+              <a href={`/attestations/${attestationPointer}`}>Permalink</a>
             </Button>
             <AttestationDetailSheet attestation={event} assertion={assertion} onUpdated={onUpdated}>
               <Button variant="outline" size="sm">Open details</Button>
