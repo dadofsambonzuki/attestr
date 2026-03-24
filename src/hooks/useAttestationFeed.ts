@@ -6,9 +6,9 @@ import { ATTESTATION_KIND } from '@/lib/attestation';
 import { resolveAuthorInput } from '@/lib/nostrIdentity';
 
 export interface AttestationFeedFilters {
-  attestor: string;
-  status: string;
-  assertionKind?: number;
+  attestors: string[];
+  statuses: string[];
+  assertionKinds: number[];
 }
 
 export function useAttestationFeed(filters: AttestationFeedFilters, runKey = 0, limit = 120) {
@@ -18,15 +18,21 @@ export function useAttestationFeed(filters: AttestationFeedFilters, runKey = 0, 
     queryKey: ['nostr', 'attestation-feed', filters, limit, runKey],
     queryFn: async () => {
       let authors: string[] | undefined;
-      if (filters.attestor) {
-        const resolved = await resolveAuthorInput(filters.attestor);
-        if (resolved) authors = [resolved];
+      if (filters.attestors.length > 0) {
+        const resolvedAuthors: string[] = [];
+        for (const attestor of filters.attestors) {
+          const resolved = await resolveAuthorInput(attestor);
+          if (resolved && !resolvedAuthors.includes(resolved)) {
+            resolvedAuthors.push(resolved);
+          }
+        }
+        authors = resolvedAuthors.length > 0 ? resolvedAuthors : undefined;
       }
 
       const baseFilter = {
         kinds: [ATTESTATION_KIND],
         authors,
-        '#s': filters.status ? [filters.status] : undefined,
+        '#s': filters.statuses.length > 0 ? filters.statuses : undefined,
         limit,
       };
 

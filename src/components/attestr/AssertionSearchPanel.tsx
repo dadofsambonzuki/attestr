@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react';
 import type { NostrEvent } from '@nostrify/nostrify';
-import { Search } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEventSearch } from '@/hooks/useEventSearch';
-import { encodeEventPointer } from '@/lib/nostrEncodings';
+import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
 import { AttestAssertionDialog } from './AttestAssertionDialog';
+import { NostrName } from '@/components/nostr/NostrName';
+import { AssertionDetailDialog } from './AssertionDetailDialog';
+import { AssertionContentRenderer } from './AssertionContentRenderer';
+import { AttestrSearchFilters } from './AttestrSearchFilters';
 
 interface AssertionSearchPanelProps {
   onSelect?: (event: NostrEvent) => void;
@@ -27,129 +27,143 @@ export function AssertionSearchPanel({
 }: AssertionSearchPanelProps) {
   const [queryInput, setQueryInput] = useState('');
   const [authorInput, setAuthorInput] = useState('');
-  const [kindInput, setKindInput] = useState('');
+  const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
+  const [kindInput, setKindInput] = useState('any');
+  const [selectedKinds, setSelectedKinds] = useState<string[]>([]);
   const [days, setDays] = useState(30);
   const [attestTarget, setAttestTarget] = useState<NostrEvent | undefined>();
   const [attestDialogOpen, setAttestDialogOpen] = useState(false);
 
   const params = useMemo(() => {
-    const parsedKind = Number.parseInt(kindInput, 10);
+    const kinds = selectedKinds
+      .map((value) => Number.parseInt(value, 10))
+      .filter((value) => Number.isFinite(value));
+
     return {
       query: queryInput,
-      author: authorInput,
-      kind: Number.isFinite(parsedKind) ? parsedKind : undefined,
+      authors: selectedAuthors,
+      kinds,
       days,
       limit: 40,
     };
-  }, [authorInput, days, kindInput, queryInput]);
+  }, [days, queryInput, selectedAuthors, selectedKinds]);
 
   const { data: events = [], isLoading, refetch } = useEventSearch(params);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Search className="h-5 w-5" />
-          Search assertion events
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 lg:grid-cols-4">
-          <div className="space-y-2 lg:col-span-2">
-            <Label htmlFor="search-query">Query</Label>
-            <Input
-              id="search-query"
-              placeholder="Search content, note1/nevent1/naddr1, or event hex"
-              value={queryInput}
-              onChange={(e) => setQueryInput(e.target.value)}
-            />
-          </div>
+    <div className="space-y-4">
+    <AttestrSearchFilters
+      title="Search assertion events"
+      onSubmit={() => refetch()}
+      query={{
+        id: 'search-query',
+        label: 'Query',
+        value: queryInput,
+        onChange: setQueryInput,
+        placeholder: 'Search content, note1/nevent1/naddr1, or event hex',
+        defaultValue: '',
+        pillLabel: 'Query',
+      }}
+      author={{
+        id: 'search-author',
+        label: 'Author',
+        inputValue: authorInput,
+        onInputChange: setAuthorInput,
+        onAdd: () => {
+          const value = authorInput.trim();
+          if (!value) return;
+          setSelectedAuthors((prev) => (prev.includes(value) ? prev : [...prev, value]));
+          setAuthorInput('');
+        },
+        selectedValues: selectedAuthors,
+        onRemove: (value) => setSelectedAuthors((prev) => prev.filter((item) => item !== value)),
+        placeholder: 'nip05 / npub / hex',
+        pillLabel: (value) => `Author: ${value}`,
+      }}
+      kind={{
+        id: 'search-kind',
+        label: 'Kind',
+        pickerValue: kindInput,
+        onPickerChange: setKindInput,
+        onAdd: () => {
+          if (kindInput === 'any') return;
+          setSelectedKinds((prev) => (prev.includes(kindInput) ? prev : [...prev, kindInput]));
+        },
+        selectedValues: selectedKinds,
+        onRemove: (value) => setSelectedKinds((prev) => prev.filter((item) => item !== value)),
+        options: [
+          { label: 'Any kind', value: 'any' },
+          { label: 'Kind 1 (Short Text Note)', value: '1' },
+          { label: 'Kind 0 (Profile Metadata)', value: '0' },
+          { label: 'Kind 3 (Contacts)', value: '3' },
+          { label: 'Kind 6 (Repost)', value: '6' },
+          { label: 'Kind 30023 (Long-form Article)', value: '30023' },
+        ],
+        pillLabel: (value) => `Kind: ${value}`,
+      }}
+      days={{
+        id: 'search-window',
+        label: 'Time window',
+        value: `${days}`,
+        onChange: (value) => setDays(Number.parseInt(value, 10)),
+        defaultValue: '30',
+        options: timeRanges.map((range) => ({ label: range.label, value: `${range.value}` })),
+        pillLabel: (value) => `Window: ${value}d`,
+      }}
+    />
 
-          <div className="space-y-2">
-            <Label htmlFor="search-author">Author</Label>
-            <Input
-              id="search-author"
-              placeholder="nip05 / npub / hex"
-              value={authorInput}
-              onChange={(e) => setAuthorInput(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="search-kind">Kind filter</Label>
-            <Input
-              id="search-kind"
-              type="number"
-              placeholder="Any kind"
-              value={kindInput}
-              onChange={(e) => setKindInput(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border p-3">
-          <div className="flex items-center gap-3">
-            <Label htmlFor="search-window">Time window</Label>
-            <Select value={`${days}`} onValueChange={(value) => setDays(Number.parseInt(value, 10))}>
-              <SelectTrigger id="search-window" className="w-36">
-                <SelectValue placeholder="Select window" />
-              </SelectTrigger>
-              <SelectContent>
-                {timeRanges.map((range) => (
-                  <SelectItem key={range.value} value={`${range.value}`}>
-                    {range.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <Button variant="outline" onClick={() => refetch()}>
-              Run search
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-2">
+        <div className="space-y-3">
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Searching relays...</p>
           ) : events.length === 0 ? (
             <p className="text-sm text-muted-foreground">No assertion events found yet.</p>
           ) : (
             events.map((event) => {
+              const pointer = encodeEventPointer(event);
+              const npub = encodeNpub(event.pubkey);
+
               return (
-                <button
-                  key={event.id}
-                  type="button"
-                  className="w-full rounded-md border p-3 text-left transition hover:bg-muted/40"
-                  onClick={() => onSelect?.(event)}
-                >
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span>kind {event.kind}</span>
-                    <span>•</span>
-                    <span>{new Date(event.created_at * 1000).toLocaleString()}</span>
-                    <span>•</span>
-                    <span className="font-mono break-all">{encodeEventPointer(event)}</span>
-                  </div>
+                <Card key={event.id}>
+                  <CardHeader className="space-y-2 pb-3">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span>Kind {event.kind}</span>
+                      <span>•</span>
+                      <span>{new Date(event.created_at * 1000).toLocaleString()}</span>
+                    </div>
+                    <p className="font-mono text-xs text-muted-foreground break-all">{pointer}</p>
+                  </CardHeader>
 
-                  <p className="mt-2 text-sm break-words">{event.content || 'No content'}</p>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-1">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Author</p>
+                      <p className="text-sm font-medium"><NostrName pubkey={event.pubkey} /></p>
+                      <p className="font-mono text-xs text-muted-foreground break-all">{npub}</p>
+                    </div>
 
-                  <div className="mt-3 flex justify-end">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={(buttonEvent) => {
-                        buttonEvent.stopPropagation();
-                        onSelect?.(event);
-                        setAttestTarget(event);
-                        setAttestDialogOpen(true);
-                      }}
-                    >
-                      Attest
-                    </Button>
-                  </div>
-                </button>
+                    <div className="space-y-1">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Summary</p>
+                      <AssertionContentRenderer event={event} mode="summary" />
+                    </div>
+
+                    <div className="flex w-full flex-wrap items-center justify-end gap-2">
+                      <AssertionDetailDialog assertion={event}>
+                        <Button variant="outline" size="sm">Open details</Button>
+                      </AssertionDetailDialog>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          onSelect?.(event);
+                          setAttestTarget(event);
+                          setAttestDialogOpen(true);
+                        }}
+                      >
+                        Attest
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               );
             })
           )}
@@ -160,7 +174,6 @@ export function AssertionSearchPanel({
           open={attestDialogOpen}
           onOpenChange={setAttestDialogOpen}
         />
-      </CardContent>
-    </Card>
+      </div>
   );
 }

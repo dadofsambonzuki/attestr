@@ -1,12 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AttestationFeed } from './AttestationFeed';
+import { AttestrSearchFilters } from './AttestrSearchFilters';
 
 const statusOptions = ['all', 'accepted', 'rejected', 'verifying', 'verified', 'revoked'] as const;
 const assertionKindOptions = [
@@ -20,84 +15,79 @@ const assertionKindOptions = [
 
 export function AttestationsWorkspace() {
   const [attestorInput, setAttestorInput] = useState('');
+  const [selectedAttestors, setSelectedAttestors] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [assertionKindInput, setAssertionKindInput] = useState('any');
+  const [selectedAssertionKinds, setSelectedAssertionKinds] = useState<string[]>([]);
 
   const [runKey, setRunKey] = useState(0);
 
   const feedFilters = useMemo(() => {
+    const assertionKinds = selectedAssertionKinds
+      .map((value) => Number.parseInt(value, 10))
+      .filter((value) => Number.isFinite(value));
+
     return {
-      attestor: attestorInput.trim(),
-      status: statusFilter === 'all' ? '' : statusFilter,
-      assertionKind: assertionKindInput === 'any' ? undefined : Number.parseInt(assertionKindInput, 10),
+      attestors: selectedAttestors,
+      statuses: selectedStatuses,
+      assertionKinds,
     };
-  }, [attestorInput, statusFilter, assertionKindInput]);
+  }, [selectedAssertionKinds, selectedAttestors, selectedStatuses]);
 
   return (
     <section className="space-y-6" id="attestations-workspace">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Search className="h-4 w-4" />
-            Filter attestations
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-4">
-            <div className="space-y-2">
-              <Label htmlFor="attestations-attestor">Attestor</Label>
-              <Input
-                id="attestations-attestor"
-                value={attestorInput}
-                onChange={(e) => setAttestorInput(e.target.value)}
-                placeholder="npub / NIP-05 / hex"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="attestations-status">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger id="attestations-status">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="attestations-kind">Assertion kind</Label>
-              <Select value={assertionKindInput} onValueChange={setAssertionKindInput}>
-                <SelectTrigger id="attestations-kind">
-                  <SelectValue placeholder="Any kind" />
-                </SelectTrigger>
-                <SelectContent>
-                  {assertionKindOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-end">
-              <Button
-                className="w-full"
-                onClick={() => setRunKey((k) => k + 1)}
-              >
-                <Search className="h-4 w-4 mr-2" />
-                Search
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <AttestrSearchFilters
+        title="Filter attestations"
+        submitLabel="Run search"
+        onSubmit={() => setRunKey((k) => k + 1)}
+        author={{
+          id: 'attestations-attestor',
+          label: 'Attestor',
+          inputValue: attestorInput,
+          onInputChange: setAttestorInput,
+          onAdd: () => {
+            const value = attestorInput.trim();
+            if (!value) return;
+            setSelectedAttestors((prev) => (prev.includes(value) ? prev : [...prev, value]));
+            setAttestorInput('');
+          },
+          selectedValues: selectedAttestors,
+          onRemove: (value) => setSelectedAttestors((prev) => prev.filter((item) => item !== value)),
+          placeholder: 'npub / NIP-05 / hex',
+          pillLabel: (value) => `Attestor: ${value}`,
+        }}
+        status={{
+          id: 'attestations-status',
+          label: 'Status',
+          pickerValue: statusFilter,
+          onPickerChange: setStatusFilter,
+          onAdd: () => {
+            if (statusFilter === 'all') return;
+            setSelectedStatuses((prev) => (prev.includes(statusFilter) ? prev : [...prev, statusFilter]));
+          },
+          selectedValues: selectedStatuses,
+          onRemove: (value) => setSelectedStatuses((prev) => prev.filter((item) => item !== value)),
+          options: statusOptions.map((status) => ({ label: status, value: status })),
+          pillLabel: (value) => `Status: ${value}`,
+        }}
+        kind={{
+          id: 'attestations-kind',
+          label: 'Assertion kind',
+          pickerValue: assertionKindInput,
+          onPickerChange: setAssertionKindInput,
+          onAdd: () => {
+            if (assertionKindInput === 'any') return;
+            setSelectedAssertionKinds((prev) => (
+              prev.includes(assertionKindInput) ? prev : [...prev, assertionKindInput]
+            ));
+          },
+          selectedValues: selectedAssertionKinds,
+          onRemove: (value) => setSelectedAssertionKinds((prev) => prev.filter((item) => item !== value)),
+          options: assertionKindOptions,
+          pillLabel: (value) => `Kind: ${value}`,
+        }}
+      />
 
       <div className="space-y-2" id="attestation-feed">
         <h2 className="text-2xl font-semibold tracking-tight">Attestations</h2>

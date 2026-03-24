@@ -32,6 +32,16 @@ export function encodeEventPointer(event: NostrEvent): string {
   }
 }
 
+export function encodeEventIdAsNevent(id: string): string {
+  if (!isHex64(id)) return id;
+
+  try {
+    return nip19.neventEncode({ id });
+  } catch {
+    return id;
+  }
+}
+
 export function encodeAssertionRef(ref: AssertionRef): string {
   if (ref.type === 'e') {
     if (!isHex64(ref.value)) return ref.value;

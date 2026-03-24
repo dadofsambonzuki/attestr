@@ -7,8 +7,8 @@ import { resolveAuthorInput, isHex64 } from '@/lib/nostrIdentity';
 
 export interface EventSearchParams {
   query: string;
-  author: string;
-  kind?: number;
+  authors: string[];
+  kinds: number[];
   days: number;
   limit: number;
 }
@@ -22,12 +22,12 @@ export function useEventSearch(params: EventSearchParams) {
       const filters: NostrFilter[] = [];
       const now = Math.floor(Date.now() / 1000);
       const since = now - params.days * 24 * 60 * 60;
-      const maybeKind = Number.isFinite(params.kind) ? [params.kind!] : undefined;
+      const maybeKinds = params.kinds.length > 0 ? params.kinds : undefined;
 
       const authors: string[] = [];
-      if (params.author.trim()) {
-        const resolved = await resolveAuthorInput(params.author.trim());
-        if (resolved) authors.push(resolved);
+      for (const author of params.authors) {
+        const resolved = await resolveAuthorInput(author.trim());
+        if (resolved && !authors.includes(resolved)) authors.push(resolved);
       }
 
       const input = params.query.trim();
@@ -36,17 +36,17 @@ export function useEventSearch(params: EventSearchParams) {
         if (direct) {
           filters.push({ ...direct, limit: params.limit });
         } else {
-          filters.push({
-            kinds: maybeKind,
-            search: input,
-            authors: authors.length > 0 ? authors : undefined,
-            since,
+            filters.push({
+              kinds: maybeKinds,
+              search: input,
+              authors: authors.length > 0 ? authors : undefined,
+              since,
             limit: params.limit,
           });
         }
       } else {
         filters.push({
-          kinds: maybeKind,
+          kinds: maybeKinds,
           authors: authors.length > 0 ? authors : undefined,
           since,
           limit: params.limit,
@@ -58,7 +58,7 @@ export function useEventSearch(params: EventSearchParams) {
 
       return dedupeById(events).sort((a, b) => b.created_at - a.created_at);
     },
-    enabled: Boolean(params.query.trim() || params.author.trim() || Number.isFinite(params.kind)),
+    enabled: Boolean(params.query.trim() || params.authors.length > 0 || params.kinds.length > 0),
   });
 }
 

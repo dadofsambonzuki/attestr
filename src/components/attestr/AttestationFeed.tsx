@@ -21,7 +21,7 @@ export function AttestationFeed({ filters, runKey = 0 }: AttestationFeedProps) {
   const { data: attestations = [], isLoading, refetch } = useAttestationFeed(filters, runKey);
   const { data: assertionData } = useAssertionEvents(attestations);
 
-  const filteredAttestations = filters.assertionKind && assertionData
+  const filteredAttestations = filters.assertionKinds.length > 0 && assertionData
     ? attestations.filter((attestation) => {
         const parsed = parseAttestation(attestation);
         if (!parsed.assertionRef) return false;
@@ -30,7 +30,7 @@ export function AttestationFeed({ filters, runKey = 0 }: AttestationFeedProps) {
           : parsed.assertionRef.type === 'a'
             ? assertionData.byAddress[parsed.assertionRef.value]
             : undefined;
-        return assertion?.kind === filters.assertionKind;
+        return assertion ? filters.assertionKinds.includes(assertion.kind) : false;
       })
     : attestations;
 
