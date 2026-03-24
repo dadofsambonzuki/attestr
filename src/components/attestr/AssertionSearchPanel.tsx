@@ -53,7 +53,7 @@ export function AssertionSearchPanel({
   return (
     <div className="space-y-4">
     <AttestrSearchFilters
-      title="Search assertion events"
+      title="Search assertions"
       onSubmit={() => refetch()}
       query={{
         id: 'search-query',

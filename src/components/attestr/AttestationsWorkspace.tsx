@@ -4,6 +4,12 @@ import { AttestationFeed } from './AttestationFeed';
 import { AttestrSearchFilters } from './AttestrSearchFilters';
 
 const statusOptions = ['all', 'accepted', 'rejected', 'verifying', 'verified', 'revoked'] as const;
+const timeWindowOptions = [
+  { label: '7 days', value: '7' },
+  { label: '30 days', value: '30' },
+  { label: '90 days', value: '90' },
+  { label: '365 days', value: '365' },
+];
 const assertionKindOptions = [
   { label: 'Any kind', value: 'any' },
   { label: 'Kind 1 (Short Text Note)', value: '1' },
@@ -14,10 +20,12 @@ const assertionKindOptions = [
 ];
 
 export function AttestationsWorkspace() {
+  const [queryInput, setQueryInput] = useState('');
   const [attestorInput, setAttestorInput] = useState('');
   const [selectedAttestors, setSelectedAttestors] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [days, setDays] = useState(30);
   const [assertionKindInput, setAssertionKindInput] = useState('any');
   const [selectedAssertionKinds, setSelectedAssertionKinds] = useState<string[]>([]);
 
@@ -29,18 +37,29 @@ export function AttestationsWorkspace() {
       .filter((value) => Number.isFinite(value));
 
     return {
+      query: queryInput,
       attestors: selectedAttestors,
       statuses: selectedStatuses,
       assertionKinds,
+      days,
     };
-  }, [selectedAssertionKinds, selectedAttestors, selectedStatuses]);
+  }, [days, queryInput, selectedAssertionKinds, selectedAttestors, selectedStatuses]);
 
   return (
     <section className="space-y-6" id="attestations-workspace">
       <AttestrSearchFilters
-        title="Filter attestations"
+        title="Search attestions"
         submitLabel="Run search"
         onSubmit={() => setRunKey((k) => k + 1)}
+        query={{
+          id: 'attestations-query',
+          label: 'Query',
+          value: queryInput,
+          onChange: setQueryInput,
+          placeholder: 'Search attestation content',
+          defaultValue: '',
+          pillLabel: 'Query',
+        }}
         author={{
           id: 'attestations-attestor',
           label: 'Attestor',
@@ -70,6 +89,15 @@ export function AttestationsWorkspace() {
           onRemove: (value) => setSelectedStatuses((prev) => prev.filter((item) => item !== value)),
           options: statusOptions.map((status) => ({ label: status, value: status })),
           pillLabel: (value) => `Status: ${value}`,
+        }}
+        days={{
+          id: 'attestations-window',
+          label: 'Time window',
+          value: `${days}`,
+          onChange: (value) => setDays(Number.parseInt(value, 10)),
+          defaultValue: '30',
+          options: timeWindowOptions,
+          pillLabel: (value) => `Window: ${value}d`,
         }}
         kind={{
           id: 'attestations-kind',

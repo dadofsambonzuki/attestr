@@ -6,9 +6,11 @@ import { ATTESTATION_KIND } from '@/lib/attestation';
 import { resolveAuthorInput } from '@/lib/nostrIdentity';
 
 export interface AttestationFeedFilters {
+  query: string;
   attestors: string[];
   statuses: string[];
   assertionKinds: number[];
+  days: number;
 }
 
 export function useAttestationFeed(filters: AttestationFeedFilters, runKey = 0, limit = 120) {
@@ -32,7 +34,9 @@ export function useAttestationFeed(filters: AttestationFeedFilters, runKey = 0, 
       const baseFilter = {
         kinds: [ATTESTATION_KIND],
         authors,
+        search: filters.query.trim() || undefined,
         '#s': filters.statuses.length > 0 ? filters.statuses : undefined,
+        since: Math.floor(Date.now() / 1000) - (filters.days * 24 * 60 * 60),
         limit,
       };
 
