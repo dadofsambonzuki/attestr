@@ -19,11 +19,14 @@ interface AttestAssertionDialogProps {
 export function AttestAssertionDialog({ assertionEvent, open, onOpenChange }: AttestAssertionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto overflow-x-hidden sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Attest assertion event</DialogTitle>
-          <DialogDescription>
-            Kind {assertionEvent?.kind ?? 'unknown'} • {assertionEvent ? encodeEventPointer(assertionEvent) : 'unknown'}
+          <DialogDescription className="break-words">
+            Kind {assertionEvent?.kind ?? 'unknown'} •{' '}
+            <span className="break-all font-mono text-xs">
+              {assertionEvent ? encodeEventPointer(assertionEvent) : 'unknown'}
+            </span>
           </DialogDescription>
         </DialogHeader>
 

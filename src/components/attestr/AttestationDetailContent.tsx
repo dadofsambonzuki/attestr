@@ -10,6 +10,7 @@ import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import { parseAttestation, type AttestationStatus } from '@/lib/attestation';
 import { NostrName } from '@/components/nostr/NostrName';
+import { NoteContent } from '@/components/NoteContent';
 import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
 import { AssertionPreview } from './AssertionPreview';
 import { AttestationZapStats } from './AttestationZapStats';
@@ -126,6 +127,17 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
             <p className="text-sm break-all">{item.value}</p>
           </div>
         ))}
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-sm font-medium">Attestation message</p>
+        <div className="min-w-0 rounded-md border p-3">
+          {attestation.content.trim().length > 0 ? (
+            <NoteContent event={attestation} className="text-sm" />
+          ) : (
+            <p className="text-sm text-muted-foreground">No attestation message provided.</p>
+          )}
+        </div>
       </div>
 
       <div className="space-y-3">

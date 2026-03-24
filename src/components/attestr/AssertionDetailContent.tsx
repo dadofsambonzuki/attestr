@@ -1,16 +1,20 @@
 import type { NostrEvent } from '@nostrify/nostrify';
+import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 import { NostrName } from '@/components/nostr/NostrName';
 import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
+import { AttestAssertionDialog } from './AttestAssertionDialog';
 
 interface AssertionDetailContentProps {
   assertion: NostrEvent;
 }
 
 export function AssertionDetailContent({ assertion }: AssertionDetailContentProps) {
+  const [attestDialogOpen, setAttestDialogOpen] = useState(false);
   const pointer = encodeEventPointer(assertion);
   const authorNpub = encodeNpub(assertion.pubkey);
 
@@ -23,6 +27,14 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
 
       <div className="flex flex-wrap gap-2">
         <Badge>Kind {assertion.kind}</Badge>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setAttestDialogOpen(true)}
+        >
+          Attest
+        </Button>
       </div>
 
       <div className="grid min-w-0 gap-3 rounded-md border p-4">
@@ -49,6 +61,12 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
       </div>
 
       <CommentsSection root={assertion} title="Comments" />
+
+      <AttestAssertionDialog
+        assertionEvent={assertion}
+        open={attestDialogOpen}
+        onOpenChange={setAttestDialogOpen}
+      />
     </div>
   );
 }
