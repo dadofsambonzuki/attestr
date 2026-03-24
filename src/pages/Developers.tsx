@@ -4,12 +4,14 @@ import { useSeoMeta } from '@unhead/react';
 import { AppHeader } from '@/components/AppHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ATTESTATION_KIND } from '@/lib/attestation';
 
 const attestationNipUrl = 'https://nostrhub.io/naddr1qvzqqqrcvypzp384u7n44r8rdq74988lqcmggww998jjg0rtzfd6dpufrxy9djk8qyfhwumn8ghj7un9d3shjtnyv9ujuct89uqqcct5w3jhxarpw35k7mnnaawl4h';
 
 export default function Developers() {
+  const attestationKinds = [ATTESTATION_KIND, 31872, 31873, 11871];
+
   useSeoMeta({
     title: 'Attestr',
     description: 'How to publish and render Nostr attestations, with tags, filters, and implementation examples.',
@@ -23,7 +25,9 @@ export default function Developers() {
         <section className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="secondary">Developers</Badge>
-            <Badge>Kind {ATTESTATION_KIND}</Badge>
+            {attestationKinds.map((kind) => (
+              <Badge key={kind}>Kind {kind}</Badge>
+            ))}
           </div>
 
           <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Build with Attestations</h1>
@@ -42,6 +46,45 @@ export default function Developers() {
           </div>
         </section>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">Clients Implementing the Attestation NIP</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-slate-700">
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="https://amethyst.social/"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300"
+              >
+                <img
+                  src="https://amethyst.social/amethyst-logo.jpg"
+                  alt="Amethyst logo"
+                  className="h-6 w-6 rounded-sm"
+                  loading="lazy"
+                />
+                <span className="font-medium text-slate-900">Amethyst</span>
+              </a>
+
+              <a
+                href="https://www.nostria.app/"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300"
+              >
+                <img
+                  src="https://www.nostria.app/favicon.ico"
+                  alt="Nostriasia logo"
+                  className="h-6 w-6 rounded-sm"
+                  loading="lazy"
+                />
+                <span className="font-medium text-slate-900">Nostriasia</span>
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
@@ -49,6 +92,7 @@ export default function Developers() {
                 <Send className="h-5 w-5" />
                 Publish an Attestation
               </CardTitle>
+              <CardDescription>Kind 31871</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-slate-700">
               <p>Use attestation kind {ATTESTATION_KIND} and include the minimum tags for reference and status.</p>
@@ -111,6 +155,92 @@ const cards = events.map((event) => {
                 For addressable assertions, reference with <code className="font-mono">a</code> tags and query with
                 <code className="font-mono"> #a</code>. Keep long IDs wrapped in UI to avoid mobile overflow.
               </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <FileSearch className="h-5 w-5" />
+                Attestation Request
+              </CardTitle>
+              <CardDescription>Kind 31872</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm text-slate-700">
+              <p>Use kind 31872 to request an attestation from one or more attestors for a specific assertion.</p>
+              <ul className="list-disc space-y-1 pl-5">
+                <li>Include <code className="font-mono text-xs">d</code> and exactly one assertion reference tag.</li>
+                <li>Optionally add <code className="font-mono text-xs">p</code> tags for requested attestors.</li>
+              </ul>
+              <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
+{`createEvent({
+  kind: 31872,
+  tags: [
+    ['d', 'npub1requestor...:request-1'],
+    ['e', '<assertion-event-id>'],
+    ['p', '<attestor-pubkey>']
+  ],
+  content: 'Please verify this assertion.'
+});`}
+              </pre>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Code2 className="h-5 w-5" />
+                Attestor Recommendation
+              </CardTitle>
+              <CardDescription>Kind 31873</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm text-slate-700">
+              <p>Use kind 31873 to recommend an attestor for specific event kinds.</p>
+              <ul className="list-disc space-y-1 pl-5">
+                <li>Use <code className="font-mono text-xs">d</code> to identify the recommended attestor.</li>
+                <li>Add one or more <code className="font-mono text-xs">k</code> tags for supported kinds.</li>
+              </ul>
+              <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
+{`createEvent({
+  kind: 31873,
+  tags: [
+    ['d', '<attestor-pubkey>'],
+    ['k', '1'],
+    ['k', '30023'],
+    ['desc', 'Reliable for content verification']
+  ],
+  content: ''
+});`}
+              </pre>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <ExternalLink className="h-5 w-5" />
+                Proficiency Declaration
+              </CardTitle>
+              <CardDescription>Kind 11871</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm text-slate-700">
+              <p>Use replaceable kind 11871 to declare which event kinds an attestor can verify.</p>
+              <ul className="list-disc space-y-1 pl-5">
+                <li>Include the attestor in <code className="font-mono text-xs">p</code> and one or more <code className="font-mono text-xs">k</code> tags.</li>
+                <li>Optionally add <code className="font-mono text-xs">desc</code> for context.</li>
+              </ul>
+              <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
+{`createEvent({
+  kind: 11871,
+  tags: [
+    ['p', '<attestor-pubkey>'],
+    ['k', '1'],
+    ['k', '30023'],
+    ['desc', 'I verify notes and long-form posts']
+  ],
+  content: ''
+});`}
+              </pre>
             </CardContent>
           </Card>
         </div>
