@@ -9,11 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MessageSquare, ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { MessageSquare, ChevronDown, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { encodeNpub } from '@/lib/nostrEncodings';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
+import { ZapButton } from '@/components/ZapButton';
+import { useWallet } from '@/hooks/useWallet';
+import { useZaps } from '@/hooks/useZaps';
 
 interface CommentProps {
   root: NostrEvent | URL | `#${string}`;
@@ -29,6 +31,8 @@ export function Comment({ root, comment, depth = 0, maxDepth = 3, limit }: Comme
   
   const author = useAuthor(comment.pubkey);
   const { data: commentsData } = useComments(root, limit);
+  const { webln, activeNWC } = useWallet();
+  const { totalSats, zapCount, isLoading: isZapsLoading } = useZaps(comment, webln, activeNWC);
 
   const metadata = author.data?.metadata;
   const displayName = getNostrDisplayName(metadata, comment.pubkey);
@@ -85,6 +89,11 @@ export function Comment({ root, comment, depth = 0, maxDepth = 3, limit }: Comme
                   <MessageSquare className="h-3 w-3 mr-1" />
                   Reply
                 </Button>
+
+                <ZapButton target={comment} className="h-8 px-2 text-xs" />
+                <span className="text-xs text-muted-foreground">
+                  {isZapsLoading ? '...' : `${zapCount} zap${zapCount === 1 ? '' : 's'}${totalSats > 0 ? ` • ${totalSats.toLocaleString()} sats` : ''}`}
+                </span>
                 
                 {hasReplies && (
                   <Collapsible open={showReplies} onOpenChange={setShowReplies}>
@@ -101,20 +110,6 @@ export function Comment({ root, comment, depth = 0, maxDepth = 3, limit }: Comme
                   </Collapsible>
                 )}
               </div>
-
-              {/* Comment menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2 text-xs"
-                    aria-label="Comment options"
-                  >
-                    <MoreHorizontal className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-              </DropdownMenu>
             </div>
           </div>
         </CardContent>
