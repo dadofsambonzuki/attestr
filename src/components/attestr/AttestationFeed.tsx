@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { AttestationDetailSheet } from './AttestationDetailSheet';
 import { AttestationCardStats } from './AttestationCardStats';
 import { NostrName } from '@/components/nostr/NostrName';
 import { encodeAssertionRef, encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
+import { ZapButton } from '@/components/ZapButton';
 
 interface AttestationFeedProps {
   filters: AttestationFeedFilters;
@@ -98,6 +100,13 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
   const attestorNpub = encodeNpub(event.pubkey);
   const attestationPointer = encodeEventPointer(event);
   const assertionRef = parsed.assertionRef ? encodeAssertionRef(parsed.assertionRef) : 'Missing';
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [initialSection, setInitialSection] = useState<'overview' | 'zaps' | 'comments'>('overview');
+
+  const openDetailAt = (section: 'overview' | 'zaps' | 'comments') => {
+    setInitialSection(section);
+    setIsDetailOpen(true);
+  };
 
   return (
     <Card>
@@ -127,13 +136,25 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <AttestationCardStats event={event} />
+          <AttestationCardStats
+            event={event}
+            onCommentsClick={() => openDetailAt('comments')}
+            onZapsClick={() => openDetailAt('zaps')}
+          />
 
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+            <ZapButton target={event} className="text-xs" />
             <Button asChild variant="ghost" size="sm">
               <a href={`/attestations/${attestationPointer}`}>Permalink</a>
             </Button>
-            <AttestationDetailSheet attestation={event} assertion={assertion} onUpdated={onUpdated}>
+            <AttestationDetailSheet
+              attestation={event}
+              assertion={assertion}
+              onUpdated={onUpdated}
+              open={isDetailOpen}
+              onDialogOpenChange={setIsDetailOpen}
+              initialSection={initialSection}
+            >
               <Button variant="outline" size="sm">Open details</Button>
             </AttestationDetailSheet>
           </div>

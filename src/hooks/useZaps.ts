@@ -12,6 +12,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import type { NostrEvent } from '@nostrify/nostrify';
 
+interface ZapperStat {
+  pubkey: string;
+  totalSats: number;
+  count: number;
+}
+
 export function useZaps(
   target: Event | Event[],
   webln: WebLNProvider | null,
@@ -74,60 +80,43 @@ export function useZaps(
   });
 
   // Process zap events into simple counts and totals
-  const { zapCount, totalSats, zaps } = useMemo(() => {
+  const { zapCount, totalSats, zaps, zappers } = useMemo(() => {
     if (!zapEvents || !Array.isArray(zapEvents) || !actualTarget) {
-      return { zapCount: 0, totalSats: 0, zaps: [] };
+      return { zapCount: 0, totalSats: 0, zaps: [], zappers: [] as ZapperStat[] };
     }
 
     let count = 0;
     let sats = 0;
+    const byZapper = new Map<string, ZapperStat>();
 
     zapEvents.forEach(zap => {
       count++;
 
-      // Try multiple methods to extract the amount:
-
-      // Method 1: amount tag (from zap request, sometimes copied to receipt)
-      const amountTag = zap.tags.find(([name]) => name === 'amount')?.[1];
-      if (amountTag) {
-        const millisats = parseInt(amountTag);
-        sats += Math.floor(millisats / 1000);
-        return;
+      const amount = extractZapAmount(zap);
+      if (amount > 0) {
+        sats += amount;
+      } else {
+        console.warn('Could not extract amount from zap receipt:', zap.id);
       }
 
-      // Method 2: Extract from bolt11 invoice
-      const bolt11Tag = zap.tags.find(([name]) => name === 'bolt11')?.[1];
-      if (bolt11Tag) {
-        try {
-          const invoiceSats = nip57.getSatoshisAmountFromBolt11(bolt11Tag);
-          sats += invoiceSats;
-          return;
-        } catch (error) {
-          console.warn('Failed to parse bolt11 amount:', error);
-        }
-      }
+      const zapperPubkey = extractZapperPubkey(zap);
+      if (!zapperPubkey || amount <= 0) return;
 
-      // Method 3: Parse from description (zap request JSON)
-      const descriptionTag = zap.tags.find(([name]) => name === 'description')?.[1];
-      if (descriptionTag) {
-        try {
-          const zapRequest = JSON.parse(descriptionTag);
-          const requestAmountTag = zapRequest.tags?.find(([name]: string[]) => name === 'amount')?.[1];
-          if (requestAmountTag) {
-            const millisats = parseInt(requestAmountTag);
-            sats += Math.floor(millisats / 1000);
-            return;
-          }
-        } catch (error) {
-          console.warn('Failed to parse description JSON:', error);
-        }
+      const previous = byZapper.get(zapperPubkey);
+      if (!previous) {
+        byZapper.set(zapperPubkey, { pubkey: zapperPubkey, totalSats: amount, count: 1 });
+      } else {
+        byZapper.set(zapperPubkey, {
+          pubkey: zapperPubkey,
+          totalSats: previous.totalSats + amount,
+          count: previous.count + 1,
+        });
       }
-
-      console.warn('Could not extract amount from zap receipt:', zap.id);
     });
 
+    const zappers = [...byZapper.values()].sort((a, b) => b.totalSats - a.totalSats);
 
-    return { zapCount: count, totalSats: sats, zaps: zapEvents };
+    return { zapCount: count, totalSats: sats, zaps: zapEvents, zappers };
   }, [zapEvents, actualTarget]);
 
   const zap = async (amount: number, comment: string) => {
@@ -338,6 +327,7 @@ export function useZaps(
 
   return {
     zaps,
+    zappers,
     zapCount,
     totalSats,
     ...query,
@@ -347,4 +337,58 @@ export function useZaps(
     setInvoice,
     resetInvoice,
   };
+}
+
+function extractZapAmount(zap: NostrEvent): number {
+  const amountTag = zap.tags.find(([name]) => name === 'amount')?.[1];
+  if (amountTag) {
+    const millisats = Number.parseInt(amountTag, 10);
+    if (Number.isFinite(millisats) && millisats > 0) {
+      return Math.floor(millisats / 1000);
+    }
+  }
+
+  const bolt11Tag = zap.tags.find(([name]) => name === 'bolt11')?.[1];
+  if (bolt11Tag) {
+    try {
+      const invoiceSats = nip57.getSatoshisAmountFromBolt11(bolt11Tag);
+      if (Number.isFinite(invoiceSats) && invoiceSats > 0) {
+        return invoiceSats;
+      }
+    } catch {
+      // Ignore parse errors and continue to description fallback.
+    }
+  }
+
+  const descriptionTag = zap.tags.find(([name]) => name === 'description')?.[1];
+  if (!descriptionTag) return 0;
+
+  try {
+    const zapRequest = JSON.parse(descriptionTag) as { tags?: string[][] };
+    const requestAmountTag = zapRequest.tags?.find(([name]) => name === 'amount')?.[1];
+    if (!requestAmountTag) return 0;
+
+    const millisats = Number.parseInt(requestAmountTag, 10);
+    if (Number.isFinite(millisats) && millisats > 0) {
+      return Math.floor(millisats / 1000);
+    }
+  } catch {
+    // Ignore parse errors and return 0.
+  }
+
+  return 0;
+}
+
+function extractZapperPubkey(zap: NostrEvent): string | null {
+  const descriptionTag = zap.tags.find(([name]) => name === 'description')?.[1];
+  if (!descriptionTag) return null;
+
+  try {
+    const zapRequest = JSON.parse(descriptionTag) as { pubkey?: string };
+    return typeof zapRequest.pubkey === 'string' && zapRequest.pubkey.length > 0
+      ? zapRequest.pubkey
+      : null;
+  } catch {
+    return null;
+  }
 }

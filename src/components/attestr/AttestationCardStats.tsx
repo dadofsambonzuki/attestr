@@ -9,9 +9,11 @@ import { useZaps } from '@/hooks/useZaps';
 
 interface AttestationCardStatsProps {
   event: NostrEvent;
+  onCommentsClick?: () => void;
+  onZapsClick?: () => void;
 }
 
-export function AttestationCardStats({ event }: AttestationCardStatsProps) {
+export function AttestationCardStats({ event, onCommentsClick, onZapsClick }: AttestationCardStatsProps) {
   const { nostr } = useNostr();
   const { webln, activeNWC } = useWallet();
   const { totalSats } = useZaps(event, webln, activeNWC);
@@ -33,14 +35,24 @@ export function AttestationCardStats({ event }: AttestationCardStatsProps) {
 
   return (
     <div className="flex items-center gap-4 text-xs text-muted-foreground">
-      <span className="inline-flex items-center gap-1">
+      <button
+        type="button"
+        onClick={onCommentsClick}
+        disabled={!onCommentsClick}
+        className="inline-flex items-center gap-1 hover:text-foreground disabled:cursor-default disabled:opacity-70"
+      >
         <MessageSquare className="h-3.5 w-3.5" />
         {commentCount}
-      </span>
-      <span className="inline-flex items-center gap-1">
+      </button>
+      <button
+        type="button"
+        onClick={onZapsClick}
+        disabled={!onZapsClick}
+        className="inline-flex items-center gap-1 hover:text-foreground disabled:cursor-default disabled:opacity-70"
+      >
         <Zap className="h-3.5 w-3.5" />
         {totalSats}
-      </span>
+      </button>
     </div>
   );
 }

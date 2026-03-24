@@ -1,5 +1,5 @@
 import type { NostrEvent } from '@nostrify/nostrify';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,11 +12,13 @@ import { parseAttestation, type AttestationStatus } from '@/lib/attestation';
 import { NostrName } from '@/components/nostr/NostrName';
 import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
 import { AssertionPreview } from './AssertionPreview';
+import { AttestationZapStats } from './AttestationZapStats';
 
 interface AttestationDetailContentProps {
   attestation: NostrEvent;
   assertion?: NostrEvent;
   onUpdated?: () => void;
+  initialSection?: 'overview' | 'zaps' | 'comments';
 }
 
 const lifecycleActions: { label: string; status: AttestationStatus; validity?: 'valid' | 'invalid' }[] = [
@@ -26,7 +28,7 @@ const lifecycleActions: { label: string; status: AttestationStatus; validity?: '
   { label: 'Revoke', status: 'revoked' },
 ];
 
-export function AttestationDetailContent({ attestation, assertion, onUpdated }: AttestationDetailContentProps) {
+export function AttestationDetailContent({ attestation, assertion, onUpdated, initialSection = 'overview' }: AttestationDetailContentProps) {
   const parsed = parseAttestation(attestation);
   const attestationPointer = encodeEventPointer(attestation);
   const attestorNpub = encodeNpub(attestation.pubkey);
@@ -35,6 +37,18 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated }: 
   const { toast } = useToast();
 
   const canUpdate = user?.pubkey === attestation.pubkey && !!parsed.d;
+  const zapsRef = useRef<HTMLDivElement>(null);
+  const commentsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (initialSection === 'zaps') {
+      zapsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    if (initialSection === 'comments') {
+      commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [initialSection]);
 
   const details = useMemo(() => {
     return [
@@ -89,6 +103,17 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated }: 
         {parsed.validity ? <Badge variant="secondary">{parsed.validity}</Badge> : null}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <ZapButton target={attestation} className="text-sm" />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        >
+          Jump to comments
+        </Button>
+      </div>
+
       <div className="grid gap-3 rounded-md border p-4">
         <div className="grid gap-1">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Attestor</p>
@@ -111,7 +136,7 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated }: 
       <div className="space-y-3 rounded-md border p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium">Lifecycle actions</p>
-          <ZapButton target={attestation} className="text-sm" />
+          <span className="text-xs text-muted-foreground">Actions by attestor</span>
         </div>
 
         {canUpdate ? (
@@ -134,7 +159,13 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated }: 
         )}
       </div>
 
-      <CommentsSection root={attestation} title="Comments" />
+      <div ref={zapsRef} id="zaps-section">
+        <AttestationZapStats event={attestation} />
+      </div>
+
+      <div ref={commentsRef} id="comments-section">
+        <CommentsSection root={attestation} title="Comments" />
+      </div>
     </div>
   );
 }

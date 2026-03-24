@@ -16,11 +16,13 @@ interface AttestationDetailSheetProps {
   children: React.ReactNode;
   onUpdated?: () => void;
   onDialogOpenChange?: (open: boolean) => void;
+  open?: boolean;
+  initialSection?: 'overview' | 'zaps' | 'comments';
 }
 
-export function AttestationDetailSheet({ attestation, assertion, children, onUpdated, onDialogOpenChange }: AttestationDetailSheetProps) {
+export function AttestationDetailSheet({ attestation, assertion, children, onUpdated, onDialogOpenChange, open, initialSection = 'overview' }: AttestationDetailSheetProps) {
   return (
-    <Dialog onOpenChange={onDialogOpenChange}>
+    <Dialog open={open} onOpenChange={onDialogOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -30,7 +32,12 @@ export function AttestationDetailSheet({ attestation, assertion, children, onUpd
           </DialogDescription>
         </DialogHeader>
 
-        <AttestationDetailContent attestation={attestation} assertion={assertion} onUpdated={onUpdated} />
+        <AttestationDetailContent
+          attestation={attestation}
+          assertion={assertion}
+          onUpdated={onUpdated}
+          initialSection={initialSection}
+        />
       </DialogContent>
     </Dialog>
   );

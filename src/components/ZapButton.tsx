@@ -2,7 +2,6 @@ import { ZapDialog } from '@/components/ZapDialog';
 import { useZaps } from '@/hooks/useZaps';
 import { useWallet } from '@/hooks/useWallet';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useAuthor } from '@/hooks/useAuthor';
 import { Zap } from 'lucide-react';
 import type { Event } from 'nostr-tools';
 
@@ -20,7 +19,6 @@ export function ZapButton({
   zapData: externalZapData
 }: ZapButtonProps) {
   const { user } = useCurrentUser();
-  const { data: author } = useAuthor(target?.pubkey || '');
   const { webln, activeNWC } = useWallet();
 
   // Only fetch data if not provided externally
@@ -30,8 +28,8 @@ export function ZapButton({
     activeNWC
   );
 
-  // Don't show zap button if user is not logged in, is the author, or author has no lightning address
-  if (!user || !target || user.pubkey === target.pubkey || (!author?.metadata?.lud16 && !author?.metadata?.lud06)) {
+  // Don't show zap button if user is not logged in or is the author
+  if (!user || !target || user.pubkey === target.pubkey) {
     return null;
   }
 
