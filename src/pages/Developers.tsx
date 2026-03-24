@@ -88,11 +88,11 @@ export default function Developers() {
               >
                 <img
                   src="https://www.nostria.app/favicon.ico"
-                  alt="Nostriasia logo"
+                  alt="Nostria logo"
                   className="h-6 w-6 rounded-sm"
                   loading="lazy"
                 />
-                <span className="font-medium text-slate-900">Nostriasia</span>
+                <span className="font-medium text-slate-900">Nostria</span>
               </a>
             </div>
           </CardContent>
@@ -130,44 +130,6 @@ export default function Developers() {
   content: 'Evidence reviewed and claim verified.'
 });`}
               </pre>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <FileSearch className="h-5 w-5" />
-                Query and Render
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-slate-700">
-              <p>
-                Query attestations by kind and assertion reference tags. Then parse tags into UI fields (status,
-                validity window, and reference type).
-              </p>
-              <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
-{`const events = await nostr.query([{
-  kinds: [${ATTESTATION_KIND}],
-  '#e': [assertionId],
-  limit: 50,
-}]);
-
-const cards = events.map((event) => {
-  const parsed = parseAttestation(event);
-  return {
-    id: event.id,
-    status: parsed.status,
-    validity: parsed.validity,
-    validFrom: parsed.validFrom,
-    validTo: parsed.validTo,
-    note: event.content,
-  };
-});`}
-              </pre>
-              <p className="text-xs text-slate-600">
-                For addressable assertions, reference with <code className="font-mono">a</code> tags and query with
-                <code className="font-mono"> #a</code>. Keep long IDs wrapped in UI to avoid mobile overflow.
-              </p>
             </CardContent>
           </Card>
 
@@ -257,6 +219,44 @@ const cards = events.map((event) => {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <FileSearch className="h-5 w-5" />
+              Query and Render
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-slate-700">
+            <p>
+              Query attestations by kind and assertion reference tags. Then parse tags into UI fields (status,
+              validity window, and reference type).
+            </p>
+            <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
+{`const events = await nostr.query([{
+  kinds: [${ATTESTATION_KIND}],
+  '#e': [assertionId],
+  limit: 50,
+}]);
+
+const cards = events.map((event) => {
+  const parsed = parseAttestation(event);
+  return {
+    id: event.id,
+    status: parsed.status,
+    validity: parsed.validity,
+    validFrom: parsed.validFrom,
+    validTo: parsed.validTo,
+    note: event.content,
+  };
+});`}
+            </pre>
+            <p className="text-xs text-slate-600">
+              For addressable assertions, reference with <code className="font-mono">a</code> tags and query with
+              <code className="font-mono"> #a</code>. Keep long IDs wrapped in UI to avoid mobile overflow.
+            </p>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
