@@ -53,6 +53,19 @@ export default function Developers() {
           <CardContent className="space-y-3 text-sm text-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               <a
+                href="/"
+                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300"
+              >
+                <img
+                  src="/images/attestr-icon.png"
+                  alt="Attestr logo"
+                  className="h-6 w-6 rounded-sm"
+                  loading="lazy"
+                />
+                <span className="font-medium text-slate-900">Attestr</span>
+              </a>
+
+              <a
                 href="https://amethyst.social/"
                 target="_blank"
                 rel="noreferrer noopener"
