@@ -56,91 +56,91 @@ export function AssertionSearchPanel({
 
   return (
     <div className="space-y-4">
-    <AttestrSearchFilters
-      title="Search Nostr events to Attest to"
-      onSubmit={() => refetch()}
-      query={{
-        id: 'search-query',
-        label: 'Query',
-        value: queryInput,
-        onChange: setQueryInput,
-        placeholder: 'Search content, note1/nevent1/naddr1, or event hex',
-        defaultValue: '',
-        pillLabel: 'Query',
-      }}
-      author={{
-        id: 'search-author',
-        label: 'Author',
-        inputValue: authorInput,
-        onInputChange: setAuthorInput,
-        onAdd: () => {
-          const value = authorInput.trim();
-          if (!value) return;
-          setSelectedAuthors((prev) => (prev.includes(value) ? prev : [...prev, value]));
-          setAuthorInput('');
-        },
-        selectedValues: selectedAuthors,
-        onRemove: (value) => setSelectedAuthors((prev) => prev.filter((item) => item !== value)),
-        placeholder: 'nip05 / npub / hex',
-        pillLabel: (value) => `Author: ${value}`,
-      }}
-      kind={{
-        id: 'search-kind',
-        label: 'Kind',
-        pickerValue: kindInput,
-        onPickerChange: setKindInput,
-        onAdd: () => {
-          if (kindInput === 'any') return;
-          setSelectedKinds((prev) => (prev.includes(kindInput) ? prev : [...prev, kindInput]));
-        },
-        selectedValues: selectedKinds,
-        onRemove: (value) => setSelectedKinds((prev) => prev.filter((item) => item !== value)),
-        options: [
-          { label: 'Any kind', value: 'any' },
-          ...getNostrKindOptions(),
-        ],
-        pillLabel: (value) => `Kind: ${formatKind(Number.parseInt(value, 10))}`,
-      }}
-      days={{
-        id: 'search-window',
-        label: 'Time window',
-        value: `${days}`,
-        onChange: (value) => setDays(Number.parseInt(value, 10)),
-        defaultValue: '30',
-        options: timeRanges.map((range) => ({ label: range.label, value: `${range.value}` })),
-        pillLabel: (value) => `Window: ${value}d`,
-      }}
-    />
+      <AttestrSearchFilters
+        title="Search Nostr events to Attest to"
+        onSubmit={() => refetch()}
+        query={{
+          id: 'search-query',
+          label: 'Query',
+          value: queryInput,
+          onChange: setQueryInput,
+          placeholder: 'Search content, note1/nevent1/naddr1, or event hex',
+          defaultValue: '',
+          pillLabel: 'Query',
+        }}
+        author={{
+          id: 'search-author',
+          label: 'Author',
+          inputValue: authorInput,
+          onInputChange: setAuthorInput,
+          onAdd: () => {
+            const value = authorInput.trim();
+            if (!value) return;
+            setSelectedAuthors((prev) => (prev.includes(value) ? prev : [...prev, value]));
+            setAuthorInput('');
+          },
+          selectedValues: selectedAuthors,
+          onRemove: (value) => setSelectedAuthors((prev) => prev.filter((item) => item !== value)),
+          placeholder: 'nip05 / npub / hex',
+          pillLabel: (value) => `Author: ${value}`,
+        }}
+        kind={{
+          id: 'search-kind',
+          label: 'Kind',
+          pickerValue: kindInput,
+          onPickerChange: setKindInput,
+          onAdd: () => {
+            if (kindInput === 'any') return;
+            setSelectedKinds((prev) => (prev.includes(kindInput) ? prev : [...prev, kindInput]));
+          },
+          selectedValues: selectedKinds,
+          onRemove: (value) => setSelectedKinds((prev) => prev.filter((item) => item !== value)),
+          options: [
+            { label: 'Any kind', value: 'any' },
+            ...getNostrKindOptions(),
+          ],
+          pillLabel: (value) => `Kind: ${formatKind(Number.parseInt(value, 10))}`,
+        }}
+        days={{
+          id: 'search-window',
+          label: 'Time window',
+          value: `${days}`,
+          onChange: (value) => setDays(Number.parseInt(value, 10)),
+          defaultValue: '30',
+          options: timeRanges.map((range) => ({ label: range.label, value: `${range.value}` })),
+          pillLabel: (value) => `Window: ${value}d`,
+        }}
+      />
 
-        <div className="space-y-3">
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Searching relays...</p>
-          ) : events.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No assertion events found yet.</p>
-          ) : (
-            events.map((event) => {
-              return (
-                <AssertionResultCard
-                  key={event.id}
-                  event={event}
-                  onOpenDetails={() => onSelect?.(event)}
-                  onAttest={() => {
-                    onSelect?.(event);
-                    setAttestTarget(event);
-                    setAttestDialogOpen(true);
-                  }}
-                />
-              );
-            })
-          )}
-        </div>
-
-        <AttestAssertionDialog
-          assertionEvent={attestTarget}
-          open={attestDialogOpen}
-          onOpenChange={setAttestDialogOpen}
-        />
+      <div className="grid gap-3 xl:grid-cols-2">
+        {isLoading ? (
+          <p className="col-span-full text-sm text-muted-foreground">Searching relays...</p>
+        ) : events.length === 0 ? (
+          <p className="col-span-full text-sm text-muted-foreground">No assertion events found yet.</p>
+        ) : (
+          events.map((event) => {
+            return (
+              <AssertionResultCard
+                key={event.id}
+                event={event}
+                onOpenDetails={() => onSelect?.(event)}
+                onAttest={() => {
+                  onSelect?.(event);
+                  setAttestTarget(event);
+                  setAttestDialogOpen(true);
+                }}
+              />
+            );
+          })
+        )}
       </div>
+
+      <AttestAssertionDialog
+        assertionEvent={attestTarget}
+        open={attestDialogOpen}
+        onOpenChange={setAttestDialogOpen}
+      />
+    </div>
   );
 }
 

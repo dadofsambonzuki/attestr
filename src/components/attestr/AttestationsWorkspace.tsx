@@ -114,14 +114,16 @@ export function AttestationsWorkspace() {
         }}
       />
 
-      <div className="space-y-2 rounded-2xl border border-slate-200 bg-white/75 p-4 shadow-sm" id="attestation-feed">
-        <h2 className="text-2xl font-semibold tracking-tight">Attestations</h2>
-        <p className="text-sm text-muted-foreground">
-          Newest first. Open any card to inspect lifecycle metadata, linked assertion details, comments, and zaps.
-        </p>
-      </div>
+      <div className="space-y-6">
+        <div className="space-y-2 rounded-2xl border border-slate-200 bg-white/75 p-4 shadow-sm" id="attestation-feed">
+          <h2 className="text-2xl font-semibold tracking-tight">Attestations</h2>
+          <p className="text-sm text-muted-foreground">
+            Newest first. Open any card to inspect lifecycle metadata, linked assertion details, comments, and zaps.
+          </p>
+        </div>
 
-      <AttestationFeed filters={feedFilters} runKey={runKey} />
+        <AttestationFeed filters={feedFilters} runKey={runKey} />
+      </div>
     </section>
   );
 }

@@ -69,7 +69,7 @@ export function AttestationFeed({ filters, runKey = 0 }: AttestationFeedProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="grid gap-4 xl:grid-cols-2">
       {filteredAttestations.map((attestation) => {
         const parsed = parseAttestation(attestation);
         const assertion = parsed.assertionRef
