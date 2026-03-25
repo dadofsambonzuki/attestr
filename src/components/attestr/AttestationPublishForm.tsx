@@ -15,6 +15,7 @@ import { LoginArea } from '@/components/auth/LoginArea';
 import { useToast } from '@/hooks/useToast';
 import {
   ATTESTATION_KIND,
+  ATTESTATION_STATUS_DESCRIPTIONS,
   ATTESTATION_STATUSES,
   type AttestationStatus,
   createAssertionTag,
@@ -116,6 +117,9 @@ export function AttestationPublishForm({ assertionEvent, onPublished, embedded =
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="attestation-status">Status</Label>
+            <p className="text-xs text-muted-foreground">
+              {ATTESTATION_STATUS_DESCRIPTIONS[status]}
+            </p>
             <Select value={status} onValueChange={(value) => setStatus(value as AttestationStatus)}>
               <SelectTrigger id="attestation-status">
                 <SelectValue placeholder="Select status" />
@@ -143,7 +147,7 @@ export function AttestationPublishForm({ assertionEvent, onPublished, embedded =
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="valid-from">Valid from</Label>
+              <Label htmlFor="valid-from">From</Label>
               <Input
                 id="valid-from"
                 type="datetime-local"
@@ -165,7 +169,7 @@ export function AttestationPublishForm({ assertionEvent, onPublished, embedded =
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="valid-to">Valid to</Label>
+                <Label htmlFor="valid-to">To</Label>
                 <Input
                   id="valid-to"
                   type="datetime-local"

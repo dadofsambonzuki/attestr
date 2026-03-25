@@ -11,6 +11,17 @@ export const ATTESTATION_STATUSES = [
 
 export type AttestationStatus = (typeof ATTESTATION_STATUSES)[number];
 
+export const ATTESTATION_STATUS_DESCRIPTIONS: Record<AttestationStatus, string> = {
+  verifying: 'Assessment in progress. Evidence is still being reviewed.',
+  valid: 'Assertion is confirmed as accurate for the selected timeframe.',
+  invalid: 'Assertion is not supported by available evidence.',
+  revoked: 'Previous attestation is withdrawn and should no longer be trusted.',
+};
+
+export function getAttestationStatusDescription(status: AttestationStatus): string {
+  return ATTESTATION_STATUS_DESCRIPTIONS[status];
+}
+
 export type AssertionRef =
   | { type: 'e'; value: string }
   | { type: 'a'; value: string };

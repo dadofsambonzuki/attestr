@@ -1,22 +1,26 @@
 import type { NostrEvent } from '@nostrify/nostrify';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 import { ZapButton } from '@/components/ZapButton';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
-import { parseAttestation, type AttestationStatus } from '@/lib/attestation';
+import { parseAttestation, toUnixTimestamp, type AttestationStatus } from '@/lib/attestation';
 import { NoteContent } from '@/components/NoteContent';
 import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
 import { formatKind } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { AssertionPreview } from './AssertionPreview';
 import { AttestationZapStats } from './AttestationZapStats';
+import { ATTESTATION_STATUS_DESCRIPTIONS } from '@/lib/attestation';
 
 interface AttestationDetailContentProps {
   attestation: NostrEvent;
@@ -44,6 +48,12 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
   const { toast } = useToast();
 
   const canUpdate = user?.pubkey === attestation.pubkey && !!parsed.d;
+
+  const [useDurationMode, setUseDurationMode] = useState(false);
+  const [validFromInput, setValidFromInput] = useState('');
+  const [validToInput, setValidToInput] = useState('');
+  const [durationMonths, setDurationMonths] = useState('1');
+
   const zapsRef = useRef<HTMLDivElement>(null);
   const commentsRef = useRef<HTMLDivElement>(null);
 
@@ -56,6 +66,13 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
       commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [initialSection]);
+
+  useEffect(() => {
+    setValidFromInput(toDateTimeLocalInput(parsed.validFrom));
+    setValidToInput(toDateTimeLocalInput(parsed.validTo));
+    setUseDurationMode(false);
+    setDurationMonths('1');
+  }, [attestation.id, parsed.validFrom, parsed.validTo]);
 
   const details = useMemo(() => {
     return [
@@ -70,8 +87,32 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
   const updateStatus = async (status: AttestationStatus) => {
     if (!parsed.d) return;
 
-    const nextTags: string[][] = attestation.tags.filter(([name]) => name !== 's');
+    const nextTags: string[][] = attestation.tags.filter(
+      ([name]) => name !== 's' && name !== 'valid_from' && name !== 'valid_to' && name !== 'expiration',
+    );
     nextTags.push(['s', status]);
+
+    const validFrom = toUnixTimestamp(validFromInput);
+    let validTo: number | undefined;
+
+    if (useDurationMode) {
+      const duration = Number.parseInt(durationMonths, 10);
+      if (Number.isFinite(duration) && duration > 0) {
+        const start = validFrom ?? Math.floor(Date.now() / 1000);
+        const startDate = new Date(start * 1000);
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + duration);
+        validTo = Math.floor(endDate.getTime() / 1000);
+      }
+    } else {
+      validTo = toUnixTimestamp(validToInput);
+    }
+
+    if (validFrom) nextTags.push(['valid_from', `${validFrom}`]);
+    if (validTo) nextTags.push(['valid_to', `${validTo}`]);
+    if (!validTo && validFrom) {
+      nextTags.push(['expiration', `${validFrom + 30 * 24 * 60 * 60}`]);
+    }
 
     try {
       await publishEvent({
@@ -153,18 +194,71 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
         </div>
 
         {canUpdate ? (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {lifecycleActions.map((action) => (
-              <Button
-                key={action.label}
-                variant="outline"
-                onClick={() => updateStatus(action.status)}
-                disabled={isPending}
-              >
-                {action.label}
-              </Button>
-            ))}
-          </div>
+          <>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {lifecycleActions.map((action) => (
+                <div key={action.label} className="space-y-1">
+                  <Button
+                    variant="outline"
+                    onClick={() => updateStatus(action.status)}
+                    disabled={isPending}
+                    className="w-full"
+                  >
+                    {action.label}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    {ATTESTATION_STATUS_DESCRIPTIONS[action.status]}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3 rounded-md border bg-muted/30 p-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-duration-mode">Use duration mode</Label>
+                <Switch
+                  id="edit-duration-mode"
+                  checked={useDurationMode}
+                  onCheckedChange={setUseDurationMode}
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-valid-from">From</Label>
+                  <Input
+                    id="edit-valid-from"
+                    type="datetime-local"
+                    value={validFromInput}
+                    onChange={(e) => setValidFromInput(e.target.value)}
+                  />
+                </div>
+
+                {useDurationMode ? (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-duration-months">Duration (months)</Label>
+                    <Input
+                      id="edit-duration-months"
+                      type="number"
+                      min={1}
+                      value={durationMonths}
+                      onChange={(e) => setDurationMonths(e.target.value)}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-valid-to">To</Label>
+                    <Input
+                      id="edit-valid-to"
+                      type="datetime-local"
+                      value={validToInput}
+                      onChange={(e) => setValidToInput(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
         ) : (
           <p className="text-sm text-muted-foreground">
             Only the attestor can update lifecycle state.
@@ -181,4 +275,17 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
       </div>
     </div>
   );
+}
+
+function toDateTimeLocalInput(unix?: number): string {
+  if (!unix) return '';
+
+  const date = new Date(unix * 1000);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
