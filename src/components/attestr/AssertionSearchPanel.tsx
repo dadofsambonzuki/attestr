@@ -10,7 +10,7 @@ import { NostrName } from '@/components/nostr/NostrName';
 import { AssertionDetailDialog } from './AssertionDetailDialog';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
 import { AttestrSearchFilters } from './AttestrSearchFilters';
-import { formatKind } from '@/lib/nostrKinds';
+import { formatKind, getNostrKindOptions } from '@/lib/nostrKinds';
 
 interface AssertionSearchPanelProps {
   onSelect?: (event: NostrEvent) => void;
@@ -54,7 +54,7 @@ export function AssertionSearchPanel({
   return (
     <div className="space-y-4">
     <AttestrSearchFilters
-      title="Search assertions"
+      title="Search Nostr events to Attest to"
       onSubmit={() => refetch()}
       query={{
         id: 'search-query',
@@ -94,11 +94,7 @@ export function AssertionSearchPanel({
         onRemove: (value) => setSelectedKinds((prev) => prev.filter((item) => item !== value)),
         options: [
           { label: 'Any kind', value: 'any' },
-          { label: formatKind(1), value: '1' },
-          { label: formatKind(0), value: '0' },
-          { label: formatKind(3), value: '3' },
-          { label: formatKind(6), value: '6' },
-          { label: formatKind(30023), value: '30023' },
+          ...getNostrKindOptions(),
         ],
         pillLabel: (value) => `Kind: ${formatKind(Number.parseInt(value, 10))}`,
       }}

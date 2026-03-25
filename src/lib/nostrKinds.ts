@@ -112,6 +112,11 @@ const KIND_NAME_BY_NUMBER: Record<number, string> = {
   31873: 'Attestor Recommendation',
 };
 
+export interface NostrKindOption {
+  label: string;
+  value: string;
+}
+
 export function getKindName(kind: number): string | null {
   return KIND_NAME_BY_NUMBER[kind] ?? null;
 }
@@ -119,4 +124,15 @@ export function getKindName(kind: number): string | null {
 export function formatKind(kind: number): string {
   const kindName = getKindName(kind);
   return kindName ? `${kindName} [${kind}]` : `Unkown [${kind}]`;
+}
+
+export function getNostrKindOptions(): NostrKindOption[] {
+  return Object.keys(KIND_NAME_BY_NUMBER)
+    .map((value) => Number.parseInt(value, 10))
+    .filter((kind) => Number.isFinite(kind))
+    .sort((a, b) => a - b)
+    .map((kind) => ({
+      label: formatKind(kind),
+      value: String(kind),
+    }));
 }

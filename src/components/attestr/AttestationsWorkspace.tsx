@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { AttestationFeed } from './AttestationFeed';
 import { AttestrSearchFilters } from './AttestrSearchFilters';
-import { formatKind } from '@/lib/nostrKinds';
+import { formatKind, getNostrKindOptions } from '@/lib/nostrKinds';
 
 const statusOptions = ['all', 'verifying', 'valid', 'invalid', 'revoked'] as const;
 const timeWindowOptions = [
@@ -13,11 +13,7 @@ const timeWindowOptions = [
 ];
 const assertionKindOptions = [
   { label: 'Any kind', value: 'any' },
-  { label: formatKind(1), value: '1' },
-  { label: formatKind(0), value: '0' },
-  { label: formatKind(3), value: '3' },
-  { label: formatKind(6), value: '6' },
-  { label: formatKind(30023), value: '30023' },
+  ...getNostrKindOptions(),
 ];
 
 export function AttestationsWorkspace() {
