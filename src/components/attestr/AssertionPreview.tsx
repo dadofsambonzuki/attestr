@@ -9,6 +9,7 @@ import { NoteContent } from '@/components/NoteContent';
 import { useAuthor } from '@/hooks/useAuthor';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { getEventViewerUrl } from '@/lib/viewers';
+import { getProfilePath } from '@/lib/nostrEncodings';
 import { encodeEventPointer } from '@/lib/nostrEncodings';
 import { formatKind } from '@/lib/nostrKinds';
 
@@ -42,7 +43,12 @@ export function AssertionPreview({ event, fallbackLabel = 'Assertion event unava
               <AvatarFallback className="text-[10px]">{authorName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-slate-900">{authorName}</p>
+              <a
+                href={getProfilePath(event.pubkey)}
+                className="truncate text-sm font-medium text-slate-900 hover:underline"
+              >
+                {authorName}
+              </a>
               <p className="truncate text-xs text-muted-foreground">{new Date(event.created_at * 1000).toLocaleString()}</p>
             </div>
           </div>

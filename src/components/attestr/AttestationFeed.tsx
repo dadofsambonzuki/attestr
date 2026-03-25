@@ -11,6 +11,7 @@ import { parseAttestation } from '@/lib/attestation';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
 import { useAuthor } from '@/hooks/useAuthor';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
+import { getProfilePath } from '@/lib/nostrEncodings';
 import { AttestationDetailSheet } from './AttestationDetailSheet';
 import { AttestationCardStats } from './AttestationCardStats';
 import { ZapButton } from '@/components/ZapButton';
@@ -124,7 +125,9 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
               <AvatarImage src={attestorAvatar} alt={attestorName} />
               <AvatarFallback className="text-[10px]">{attestorName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <p className="truncate text-sm font-medium text-slate-900">{attestorName}</p>
+            <a href={getProfilePath(event.pubkey)} className="truncate text-sm font-medium text-slate-900 hover:underline">
+              {attestorName}
+            </a>
           </div>
           <p className="text-xs text-muted-foreground">{new Date(event.created_at * 1000).toLocaleString()}</p>
         </div>
@@ -144,7 +147,16 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
                   <AvatarImage src={asserterAvatar} alt={asserterName} />
                   <AvatarFallback className="text-[9px]">{asserterName.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <p className="truncate text-xs font-medium text-slate-800">{asserterName}</p>
+                {assertion ? (
+                  <a
+                    href={getProfilePath(assertion.pubkey)}
+                    className="truncate text-xs font-medium text-slate-800 hover:underline"
+                  >
+                    {asserterName}
+                  </a>
+                ) : (
+                  <p className="truncate text-xs font-medium text-slate-800">{asserterName}</p>
+                )}
               </div>
               <Badge variant="outline" className="max-w-[45%] truncate text-[10px] font-medium">{assertionKindLabel}</Badge>
             </div>

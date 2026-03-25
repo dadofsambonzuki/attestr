@@ -14,6 +14,14 @@ export function encodeNpub(pubkey: string): string {
   }
 }
 
+export function getProfilePath(pubkey: string): string {
+  return `/profile/${encodeNpub(pubkey)}`;
+}
+
+export function getProfilePathFromNpub(npub: string): string {
+  return `/profile/${npub}`;
+}
+
 export function encodeEventPointer(event: NostrEvent): string {
   if (event.kind >= 30000 && event.kind < 40000) {
     const d = event.tags.find(([name]) => name === 'd')?.[1] ?? '';

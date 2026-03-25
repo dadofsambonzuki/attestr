@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { MessageSquare, ChevronDown, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { encodeNpub } from '@/lib/nostrEncodings';
+import { encodeNpub, getProfilePathFromNpub } from '@/lib/nostrEncodings';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { ZapButton } from '@/components/ZapButton';
 import { useWallet } from '@/hooks/useWallet';
@@ -51,7 +51,7 @@ export function Comment({ root, comment, depth = 0, maxDepth = 3, limit }: Comme
             {/* Comment Header */}
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3">
-                <Link to={`/${npub}`}>
+                <Link to={getProfilePathFromNpub(npub)}>
                   <Avatar className="h-8 w-8 hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer">
                     <AvatarImage src={metadata?.picture} />
                     <AvatarFallback className="text-xs">
@@ -61,7 +61,7 @@ export function Comment({ root, comment, depth = 0, maxDepth = 3, limit }: Comme
                 </Link>
                 <div>
                   <Link 
-                    to={`/${npub}`}
+                    to={getProfilePathFromNpub(npub)}
                     className="font-medium text-sm hover:text-primary transition-colors"
                   >
                     {displayName}

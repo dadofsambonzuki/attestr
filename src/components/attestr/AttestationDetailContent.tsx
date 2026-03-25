@@ -15,7 +15,7 @@ import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import { parseAttestation, toUnixTimestamp, type AttestationStatus } from '@/lib/attestation';
 import { NoteContent } from '@/components/NoteContent';
-import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
+import { encodeEventPointer, encodeNpub, getProfilePath } from '@/lib/nostrEncodings';
 import { formatKind } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { AssertionPreview } from './AssertionPreview';
@@ -155,7 +155,12 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
               <AvatarImage src={attestorAvatar} alt={attestorName} />
               <AvatarFallback className="text-[10px]">{attestorName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <p className="truncate text-sm">{attestorName}</p>
+            <a
+              href={getProfilePath(attestation.pubkey)}
+              className="truncate text-sm hover:underline"
+            >
+              {attestorName}
+            </a>
           </div>
           <p className="break-all font-mono text-xs text-muted-foreground">{attestorNpub}</p>
         </div>

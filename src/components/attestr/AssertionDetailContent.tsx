@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 import { useAuthor } from '@/hooks/useAuthor';
-import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
+import { encodeEventPointer, encodeNpub, getProfilePath } from '@/lib/nostrEncodings';
 import { formatKind } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
@@ -51,7 +51,12 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
               <AvatarImage src={authorAvatar} alt={authorName} />
               <AvatarFallback className="text-[10px]">{authorName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <p className="truncate text-sm">{authorName}</p>
+            <a
+              href={getProfilePath(assertion.pubkey)}
+              className="truncate text-sm hover:underline"
+            >
+              {authorName}
+            </a>
           </div>
           <p className="break-all font-mono text-xs text-muted-foreground">{authorNpub}</p>
         </div>

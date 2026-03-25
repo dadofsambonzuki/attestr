@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useEventSearch } from '@/hooks/useEventSearch';
 import { useAuthor } from '@/hooks/useAuthor';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
+import { getProfilePath } from '@/lib/nostrEncodings';
 import { AttestAssertionDialog } from './AttestAssertionDialog';
 import { AssertionDetailDialog } from './AssertionDetailDialog';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
@@ -166,7 +167,12 @@ function AssertionResultCard({
               <AvatarFallback className="text-[10px]">{displayName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-slate-900">{displayName}</p>
+              <a
+                href={getProfilePath(event.pubkey)}
+                className="truncate text-sm font-medium text-slate-900 hover:underline"
+              >
+                {displayName}
+              </a>
               <p className="truncate text-xs text-muted-foreground">{new Date(event.created_at * 1000).toLocaleString()}</p>
             </div>
           </div>

@@ -5,7 +5,7 @@ import { nip19 } from 'nostr-tools';
 import { useAuthor } from '@/hooks/useAuthor';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { cn } from '@/lib/utils';
-import { encodeNpub } from '@/lib/nostrEncodings';
+import { encodeNpub, getProfilePathFromNpub } from '@/lib/nostrEncodings';
 
 interface NoteContentProps {
   event: NostrEvent;
@@ -129,7 +129,7 @@ function NostrMention({ pubkey }: { pubkey: string }) {
 
   return (
     <Link 
-      to={`/${npub}`}
+      to={getProfilePathFromNpub(npub)}
       className={cn(
         "font-medium hover:underline",
         hasRealName 

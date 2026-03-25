@@ -4,7 +4,7 @@ import { useDMContext } from '@/hooks/useDMContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuthor } from '@/hooks/useAuthor';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
-import { encodeNpub } from '@/lib/nostrEncodings';
+import { encodeNpub, getProfilePath } from '@/lib/nostrEncodings';
 import { MESSAGE_PROTOCOL, PROTOCOL_MODE, type MessageProtocol } from '@/lib/dmConstants';
 import { formatConversationTime, formatFullDateTime } from '@/lib/dmUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -182,7 +182,7 @@ const ChatHeader = ({ pubkey, onBack }: { pubkey: string; onBack?: () => void })
       </Avatar>
       
       <div className="flex-1 min-w-0">
-        <h2 className="font-semibold truncate">{displayName}</h2>
+        <a href={getProfilePath(pubkey)} className="font-semibold truncate hover:underline">{displayName}</a>
         <p className="text-xs text-muted-foreground truncate">{metadata?.nip05 ?? npub}</p>
       </div>
     </div>

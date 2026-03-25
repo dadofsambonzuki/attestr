@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import { useAuthor } from '@/hooks/useAuthor';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
+import { getProfilePath } from '@/lib/nostrEncodings';
 import { cn } from '@/lib/utils';
 
 interface NostrNameProps {
@@ -16,5 +17,12 @@ export function NostrName({ pubkey, className }: NostrNameProps) {
     return getNostrDisplayName(author.data?.metadata, pubkey);
   }, [author.data?.metadata, pubkey]);
 
-  return <span className={cn('break-words', className)}>{displayName}</span>;
+  return (
+    <a
+      href={getProfilePath(pubkey)}
+      className={cn('break-words hover:underline', className)}
+    >
+      {displayName}
+    </a>
+  );
 }

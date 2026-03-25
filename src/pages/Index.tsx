@@ -13,7 +13,7 @@ import { useAttestationFeed } from '@/hooks/useAttestationFeed';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
 import { parseAttestation, parseAddressCoordinate } from '@/lib/attestation';
 import { getKindName } from '@/lib/nostrKinds';
-import { encodeEventPointer } from '@/lib/nostrEncodings';
+import { encodeEventPointer, getProfilePath } from '@/lib/nostrEncodings';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -192,7 +192,12 @@ function RecentAttestationCard({ event, assertionEvent }: { event: NostrEvent; a
               <AvatarImage src={avatarUrl} alt={displayName} />
               <AvatarFallback className="text-[10px]">{displayName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <p className="truncate text-xs font-medium text-slate-800">{displayName}</p>
+            <a
+              href={getProfilePath(event.pubkey)}
+              className="truncate text-xs font-medium text-slate-800 hover:underline"
+            >
+              {displayName}
+            </a>
           </div>
           <Badge variant="secondary" className="capitalize">{parsed.status ?? 'unknown'}</Badge>
         </div>
@@ -209,9 +214,16 @@ function RecentAttestationCard({ event, assertionEvent }: { event: NostrEvent; a
                   <AvatarImage src={asserterAvatarUrl} alt={asserterName} />
                   <AvatarFallback className="text-[9px]">{asserterName.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <p className="truncate text-[11px] font-medium text-slate-700">
-                  {asserterName}
-                </p>
+                {assertionEvent ? (
+                  <a
+                    href={getProfilePath(assertionEvent.pubkey)}
+                    className="truncate text-[11px] font-medium text-slate-700 hover:underline"
+                  >
+                    {asserterName}
+                  </a>
+                ) : (
+                  <p className="truncate text-[11px] font-medium text-slate-700">{asserterName}</p>
+                )}
               </div>
               <Badge variant="outline" className="max-w-[48%] truncate text-[10px] font-medium">
                 {assertionKind ? (getKindName(assertionKind) ?? 'Unkown') : 'Event reference'}

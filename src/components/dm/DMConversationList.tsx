@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { LOADING_PHASES } from '@/lib/dmConstants';
-import { encodeNpub } from '@/lib/nostrEncodings';
+import { encodeNpub, getProfilePath } from '@/lib/nostrEncodings';
 
 interface DMConversationListProps {
   selectedPubkey: string | null;
@@ -77,7 +77,7 @@ const ConversationItemComponent = ({
               {isLoadingProfile ? (
                 <Skeleton className="h-[1.25rem] w-24" />
               ) : (
-                <span className="font-medium text-sm truncate">{displayName}</span>
+                <a href={getProfilePath(pubkey)} className="font-medium text-sm truncate hover:underline" onClick={(e) => e.stopPropagation()}>{displayName}</a>
               )}
               {hasNIP4Messages && (
                 <TooltipProvider>
