@@ -32,8 +32,8 @@ export default function Developers() {
 
           <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Build with Attestations</h1>
           <p className="mt-3 max-w-3xl text-base text-slate-700 sm:text-lg">
-            Attestations are Nostr events that reference another event and add lifecycle status, validity metadata,
-            and optional notes. Use them to express trust judgments and let clients render verifiable context.
+            Attestations are Nostr events that reference another event and add lifecycle status, optional validity
+            windows, and optional notes. Use them to express trust judgments and let clients render verifiable context.
           </p>
 
           <div className="flex flex-wrap gap-3 pt-8">
@@ -111,9 +111,10 @@ export default function Developers() {
               <p>Use attestation kind {ATTESTATION_KIND} and include the minimum tags for reference and status.</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li><code className="font-mono text-xs">d</code>: unique identifier for this attestation event</li>
-                <li><code className="font-mono text-xs">e</code> or <code className="font-mono text-xs">a</code>: target assertion reference</li>
+                <li><code className="font-mono text-xs">e</code> or <code className="font-mono text-xs">a</code>: exactly one target assertion reference</li>
                 <li><code className="font-mono text-xs">s</code>: lifecycle status (<code className="font-mono text-xs">verifying</code>, <code className="font-mono text-xs">valid</code>, <code className="font-mono text-xs">invalid</code>, <code className="font-mono text-xs">revoked</code>)</li>
                 <li><code className="font-mono text-xs">valid_from</code>, <code className="font-mono text-xs">valid_to</code>: optional unix timestamps</li>
+                <li><code className="font-mono text-xs">expiration</code>, <code className="font-mono text-xs">request</code>: optional workflow tags</li>
               </ul>
               <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
 {`createEvent({
@@ -121,7 +122,7 @@ export default function Developers() {
   tags: [
     ['d', 'attestation-id'],
     ['e', '<assertion-event-id>'],
-    ['s', 'valid'],
+    ['s', 'verifying'],
     ['valid_from', '1735689600'],
     ['valid_to', '1767225600']
   ],
@@ -170,17 +171,18 @@ export default function Developers() {
             <CardContent className="space-y-3 text-sm text-slate-700">
               <p>Use kind 31873 to recommend an attestor for specific event kinds.</p>
               <ul className="list-disc space-y-1 pl-5">
-                <li>Use <code className="font-mono text-xs">d</code> to identify the recommended attestor.</li>
+                <li>Use <code className="font-mono text-xs">d</code> as <code className="font-mono text-xs">&lt;attestor-pubkey&gt;&lt;recommendation-id&gt;</code>.</li>
+                <li>Include <code className="font-mono text-xs">p</code> with the recommended attestor pubkey.</li>
                 <li>Add one or more <code className="font-mono text-xs">k</code> tags for supported kinds.</li>
               </ul>
               <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
 {`createEvent({
   kind: 31873,
   tags: [
-    ['d', '<attestor-pubkey>'],
+    ['d', '<attestor-pubkey><recommendation-id>'],
+    ['p', '<attestor-pubkey>'],
     ['k', '1'],
-    ['k', '30023'],
-    ['desc', 'Reliable for content verification']
+    ['k', '30023']
   ],
   content: ''
 });`}
@@ -199,17 +201,14 @@ export default function Developers() {
             <CardContent className="space-y-3 text-sm text-slate-700">
               <p>Use replaceable kind 11871 to declare which event kinds an attestor can verify.</p>
               <ul className="list-disc space-y-1 pl-5">
-                <li>Include the attestor in <code className="font-mono text-xs">p</code> and one or more <code className="font-mono text-xs">k</code> tags.</li>
-                <li>Optionally add <code className="font-mono text-xs">desc</code> for context.</li>
+                <li>Include one or more <code className="font-mono text-xs">k</code> tags for supported kinds.</li>
               </ul>
               <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
 {`createEvent({
   kind: 11871,
   tags: [
-    ['p', '<attestor-pubkey>'],
     ['k', '1'],
-    ['k', '30023'],
-    ['desc', 'I verify notes and long-form posts']
+    ['k', '30023']
   ],
   content: ''
 });`}
@@ -227,12 +226,13 @@ export default function Developers() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-slate-700">
             <p>
-              Query attestations by kind and assertion reference tags. Then parse tags into UI fields (status,
-              validity window, and reference type).
+              Query attestations by kind, status, and assertion reference tags. Then parse tags into UI fields
+              (status, validity window, and reference type).
             </p>
             <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
 {`const events = await nostr.query([{
   kinds: [${ATTESTATION_KIND}],
+  '#s': ['verifying', 'valid', 'invalid', 'revoked'],
   '#e': [assertionId],
   limit: 50,
 }]);

@@ -30,7 +30,6 @@ This file is a local context reference for Attestr development.
 ## `31873` Attestor Recommendation
 
 - Required: `d` (recommended attestor identifier)
-- Required: `p` (recommended attestor pubkey)
 - Required: one or more `k` tags (kinds)
 
 
