@@ -1,5 +1,5 @@
 import type { NostrEvent } from '@nostrify/nostrify';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -74,15 +74,11 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
     setDurationMonths('1');
   }, [attestation.id, parsed.validFrom, parsed.validTo]);
 
-  const details = useMemo(() => {
-    return [
-      { label: 'Status', value: parsed.status ?? 'unknown' },
-      { label: 'Valid from', value: parsed.validFrom ? new Date(parsed.validFrom * 1000).toLocaleString() : 'n/a' },
-      { label: 'Valid to', value: parsed.validTo ? new Date(parsed.validTo * 1000).toLocaleString() : 'n/a' },
-      { label: 'Created', value: new Date(attestation.created_at * 1000).toLocaleString() },
-      { label: 'd tag', value: parsed.d ?? 'n/a' },
-    ];
-  }, [attestation, parsed]);
+  const statusValue = parsed.status ?? 'unknown';
+  const createdValue = new Date(attestation.created_at * 1000).toLocaleString();
+  const dTagValue = parsed.d ?? 'n/a';
+  const validFromValue = parsed.validFrom ? new Date(parsed.validFrom * 1000).toLocaleString() : 'n/a';
+  const validToValue = parsed.validTo ? new Date(parsed.validTo * 1000).toLocaleString() : 'n/a';
 
   const updateStatus = async (status: AttestationStatus) => {
     if (!parsed.d) return;
@@ -163,12 +159,33 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
           </div>
           <p className="break-all font-mono text-xs text-muted-foreground">{attestorNpub}</p>
         </div>
-        {details.map((item) => (
-          <div key={item.label} className="grid gap-1">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.label}</p>
-            <p className="text-sm break-all">{item.value}</p>
+        <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="rounded-md border bg-background/80 p-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Status</p>
+              <p className="mt-1 text-sm break-all">{statusValue}</p>
+            </div>
+            <div className="rounded-md border bg-background/80 p-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">d tag</p>
+              <p className="mt-1 text-sm break-all">{dTagValue}</p>
+            </div>
           </div>
-        ))}
+
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="rounded-md border bg-background/80 p-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Created</p>
+              <p className="mt-1 text-sm break-all">{createdValue}</p>
+            </div>
+            <div className="rounded-md border bg-background/80 p-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Valid from</p>
+              <p className="mt-1 text-sm break-all">{validFromValue}</p>
+            </div>
+            <div className="rounded-md border bg-background/80 p-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Valid to</p>
+              <p className="mt-1 text-sm break-all">{validToValue}</p>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-1 space-y-2 rounded-md border bg-muted/30 p-3">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Attestation message</p>
