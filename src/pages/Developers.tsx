@@ -20,11 +20,11 @@ export default function Developers() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 via-white to-amber-50 text-slate-900">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-slate-100 via-white to-amber-50 text-slate-900">
       <AppHeader />
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <section className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+        <section className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="secondary">Developers</Badge>
             {attestationKinds.map((kind) => (
@@ -39,13 +39,13 @@ export default function Developers() {
           </p>
 
           <div className="flex flex-wrap gap-3 pt-8">
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild className="w-full sm:w-auto">
               <a href={attestationNipUrl} target="_blank" rel="noreferrer noopener">
                 Read Attestation NIP
                 <ExternalLink className="ml-2 h-4 w-4" />
               </a>
             </Button>
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild className="w-full sm:w-auto">
               <a href={githubRepoUrl} target="_blank" rel="noreferrer noopener">
                 View GitHub Repo
                 <ExternalLink className="ml-2 h-4 w-4" />
@@ -62,7 +62,7 @@ export default function Developers() {
             <div className="flex flex-wrap items-center gap-3">
               <a
                 href="/"
-                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300"
+                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
               >
                 <img
                   src="/images/attestr-icon.png"
@@ -77,7 +77,7 @@ export default function Developers() {
                 href="https://amethyst.social/"
                 target="_blank"
                 rel="noreferrer noopener"
-                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300"
+                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
               >
                 <img
                   src="https://amethyst.social/amethyst-logo.jpg"
@@ -92,7 +92,7 @@ export default function Developers() {
                 href="https://www.nostria.app/"
                 target="_blank"
                 rel="noreferrer noopener"
-                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300"
+                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
               >
                 <img
                   src="https://www.nostria.app/favicon.ico"
@@ -106,7 +106,7 @@ export default function Developers() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid min-w-0 gap-6 lg:grid-cols-2 [&>*]:min-w-0">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
@@ -115,7 +115,7 @@ export default function Developers() {
               </CardTitle>
               <CardDescription>{formatKind(31871)}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-slate-700">
+            <CardContent className="min-w-0 space-y-3 text-sm text-slate-700">
               <p>Use {formatKind(ATTESTATION_KIND)} and include the minimum tags for reference and status.</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li><code className="font-mono text-xs">d</code>: unique identifier for this attestation event</li>
@@ -124,7 +124,7 @@ export default function Developers() {
                 <li><code className="font-mono text-xs">valid_from</code>, <code className="font-mono text-xs">valid_to</code>: optional unix timestamps</li>
                 <li><code className="font-mono text-xs">expiration</code>, <code className="font-mono text-xs">request</code>: optional workflow tags</li>
               </ul>
-              <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
+               <pre className="w-full max-w-full overflow-x-auto rounded-md border bg-slate-50 p-3 text-[11px] text-slate-800 sm:text-xs">
 {`createEvent({
   kind: ${ATTESTATION_KIND},
   tags: [
@@ -148,13 +148,13 @@ export default function Developers() {
               </CardTitle>
               <CardDescription>{formatKind(31872)}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-slate-700">
+            <CardContent className="min-w-0 space-y-3 text-sm text-slate-700">
               <p>Use {formatKind(31872)} to request an attestation from one or more attestors for a specific assertion.</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li>Include <code className="font-mono text-xs">d</code> and exactly one assertion reference tag.</li>
                 <li>Optionally add <code className="font-mono text-xs">p</code> tags for requested attestors.</li>
               </ul>
-              <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
+               <pre className="w-full max-w-full overflow-x-auto rounded-md border bg-slate-50 p-3 text-[11px] text-slate-800 sm:text-xs">
 {`createEvent({
   kind: 31872,
   tags: [
@@ -176,14 +176,14 @@ export default function Developers() {
               </CardTitle>
               <CardDescription>{formatKind(31873)}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-slate-700">
+            <CardContent className="min-w-0 space-y-3 text-sm text-slate-700">
               <p>Use {formatKind(31873)} to recommend an attestor for specific event kinds.</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li>Use <code className="font-mono text-xs">d</code> as <code className="font-mono text-xs">&lt;attestor-pubkey&gt;&lt;recommendation-id&gt;</code>.</li>
                 <li>Include <code className="font-mono text-xs">p</code> with the recommended attestor pubkey.</li>
                 <li>Add one or more <code className="font-mono text-xs">k</code> tags for supported kinds.</li>
               </ul>
-              <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
+               <pre className="w-full max-w-full overflow-x-auto rounded-md border bg-slate-50 p-3 text-[11px] text-slate-800 sm:text-xs">
 {`createEvent({
   kind: 31873,
   tags: [
@@ -206,12 +206,12 @@ export default function Developers() {
               </CardTitle>
               <CardDescription>{formatKind(11871)}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-slate-700">
+            <CardContent className="min-w-0 space-y-3 text-sm text-slate-700">
               <p>Use replaceable {formatKind(11871)} to declare which event kinds an attestor can verify.</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li>Include one or more <code className="font-mono text-xs">k</code> tags for supported kinds.</li>
               </ul>
-              <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
+               <pre className="w-full max-w-full overflow-x-auto rounded-md border bg-slate-50 p-3 text-[11px] text-slate-800 sm:text-xs">
 {`createEvent({
   kind: 11871,
   tags: [
@@ -237,7 +237,7 @@ export default function Developers() {
               Query attestations by event kind, status, and assertion reference tags. Then parse tags into UI fields
               (status, validity window, and reference type).
             </p>
-            <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
+            <pre className="w-full max-w-full overflow-x-auto rounded-md border bg-slate-50 p-3 text-[11px] text-slate-800 sm:text-xs">
 {`const events = await nostr.query([{
   kinds: [${ATTESTATION_KIND}],
   '#s': ['verifying', 'valid', 'invalid', 'revoked'],
