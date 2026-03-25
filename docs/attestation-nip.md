@@ -16,29 +16,28 @@ This file is a local context reference for Attestr development.
 ## `31871` Attestation
 
 - Required: `d`
-- Required: exactly one assertion reference from `e` or `a` or `p`
-- Optional: `s` (`accepted`, `rejected`, `verifying`, `verified`, `revoked`)
-- Conditional: `v` (`valid` or `invalid`) when `s=verified`
+- Required: exactly one assertion reference from `e` or `a`
+- Required: `s` (`verifying`, `valid`, `invalid`, `revoked`)
 - Optional: `valid_from`, `valid_to`, `expiration`, `request`
 
 ## `31872` Attestation Request
 
 - Required: `d`
-- Required: exactly one assertion reference from `e` or `a` or `p`
+- Required: exactly one assertion reference from `e` or `a`
 - Optional: one or more `p` tags (requested attestors)
 - Optional: `cashu_token`
 
 ## `31873` Attestor Recommendation
 
 - Required: `d` (recommended attestor identifier)
+- Required: `p` (recommended attestor pubkey)
 - Required: one or more `k` tags (kinds)
-- Optional: `desc`
+
 
 ## `11871` Proficiency Declaration
 
-- Required: `p` (declaring attestor pubkey)
 - Required: one or more `k` tags (kinds)
-- Optional: `desc`
+
 
 ## Notes
 
