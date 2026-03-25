@@ -155,6 +155,33 @@ export default function Profile() {
             )}
           </CardContent>
         </Card>
+
+        <Card className="border-dashed border-slate-300 bg-white/80 shadow-sm">
+          <CardHeader>
+            <CardTitle>Attestation Requests</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Coming soon - requests (kind 31872) authored by this user.</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-dashed border-slate-300 bg-white/80 shadow-sm">
+          <CardHeader>
+            <CardTitle>Attestor Recommendations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Coming soon - recommendations (kind 31873) authored by this user.</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-dashed border-slate-300 bg-white/80 shadow-sm">
+          <CardHeader>
+            <CardTitle>Attestor Proficiency Declarations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Coming soon - proficiency declarations (kind 11871) for this user.</p>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
