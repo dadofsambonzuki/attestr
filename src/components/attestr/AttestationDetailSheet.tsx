@@ -35,7 +35,7 @@ export function AttestationDetailSheet({ attestation, assertion, children, onUpd
   return (
     <Dialog open={open} onOpenChange={onDialogOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Attestation details</DialogTitle>
           <DialogDescription>

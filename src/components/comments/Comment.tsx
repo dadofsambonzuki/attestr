@@ -44,7 +44,7 @@ export function Comment({ root, comment, depth = 0, maxDepth = 3, limit }: Comme
   const hasReplies = replies.length > 0;
 
   return (
-    <div className={`space-y-3 ${depth > 0 ? 'ml-6 border-l-2 border-muted pl-4' : ''}`}>
+    <div className={`space-y-3 ${depth > 0 ? 'ml-3 border-l-2 border-muted pl-2 sm:ml-6 sm:pl-4' : ''}`}>
       <Card className="bg-card/50">
         <CardContent className="p-4">
           <div className="space-y-3">
@@ -117,7 +117,7 @@ export function Comment({ root, comment, depth = 0, maxDepth = 3, limit }: Comme
 
       {/* Reply Form */}
       {showReplyForm && (
-        <div className="ml-6">
+        <div className="ml-3 sm:ml-6">
           <CommentForm
             root={root}
             reply={comment}

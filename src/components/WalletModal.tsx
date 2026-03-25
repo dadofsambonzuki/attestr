@@ -274,7 +274,7 @@ export function WalletModal({ children, className }: WalletModalProps) {
 
   const addWalletDialog = (
     <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[95vw] sm:max-w-[425px] overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Connect NWC Wallet</DialogTitle>
           <DialogDescription>
@@ -374,7 +374,7 @@ export function WalletModal({ children, className }: WalletModalProps) {
             </Button>
           )}
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[80vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5" />

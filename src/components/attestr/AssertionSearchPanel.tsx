@@ -57,7 +57,7 @@ export function AssertionSearchPanel({
   return (
     <div className="space-y-4">
       <AttestrSearchFilters
-        title="Search Nostr events to Attest to"
+        title="Search Nostr events"
         onSubmit={() => refetch()}
         query={{
           id: 'search-query',

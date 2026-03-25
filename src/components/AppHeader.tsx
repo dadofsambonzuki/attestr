@@ -26,7 +26,7 @@ export function AppHeader() {
           <NavLink
             to="/attest"
             className={({ isActive }) =>
-              `inline-flex h-10 min-w-[5.75rem] items-center justify-center rounded-md px-3 py-2 transition sm:min-w-[7.5rem] ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
+              `inline-flex h-10 items-center justify-center rounded-md px-2.5 py-2 text-xs transition sm:px-3 sm:text-sm ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
             }
           >
             Attest
@@ -34,7 +34,7 @@ export function AppHeader() {
           <NavLink
             to="/attestations"
             className={({ isActive }) =>
-              `inline-flex h-10 min-w-[5.75rem] items-center justify-center rounded-md px-3 py-2 transition sm:min-w-[7.5rem] ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
+              `inline-flex h-10 items-center justify-center rounded-md px-2.5 py-2 text-xs transition sm:px-3 sm:text-sm ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
             }
           >
             Attestations
@@ -42,7 +42,7 @@ export function AppHeader() {
           <NavLink
             to="/developers"
             className={({ isActive }) =>
-              `inline-flex h-10 min-w-[5.75rem] items-center justify-center rounded-md px-3 py-2 transition sm:min-w-[7.5rem] ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
+              `inline-flex h-10 items-center justify-center rounded-md px-2.5 py-2 text-xs transition sm:px-3 sm:text-sm ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
             }
           >
             Developers
@@ -51,7 +51,7 @@ export function AppHeader() {
             <NavLink
               to={getProfilePath(user.pubkey)}
               className={({ isActive }) =>
-                `inline-flex h-10 min-w-[5.75rem] items-center justify-center rounded-md px-3 py-2 transition sm:min-w-[7.5rem] ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
+                `inline-flex h-10 items-center justify-center rounded-md px-2.5 py-2 text-xs transition sm:px-3 sm:text-sm ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
               }
             >
               Profile
