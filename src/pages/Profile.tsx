@@ -11,9 +11,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
 import { parseAttestation, ATTESTATION_KIND } from '@/lib/attestation';
+import { getKindName } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
 import { normalizeToPubkey } from '@/lib/nostrIdentity';
+import type { NostrEvent } from '@nostrify/nostrify';
 
 interface ClientProfileLink {
   label: string;
@@ -142,24 +144,12 @@ export default function Profile() {
                   : undefined;
 
                 return (
-                  <Link
+                  <ProfileAttestationCard
                     key={attestation.id}
+                    attestation={attestation}
+                    assertion={assertion}
                     to={`/attestations/${pointer}`}
-                    className="block rounded-md border border-slate-200 bg-slate-50/70 p-3 transition hover:border-slate-300 hover:bg-white"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge className="capitalize">{parsed.status ?? 'unknown'}</Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(attestation.created_at * 1000).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="mt-2 line-clamp-2 text-sm text-slate-700">
-                      {attestation.content.trim() || 'No attestation message.'}
-                    </p>
-                    {assertion ? (
-                      <p className="mt-1 text-xs text-muted-foreground">Linked assertion available</p>
-                    ) : null}
-                  </Link>
+                  />
                 );
               })
             )}
@@ -167,5 +157,58 @@ export default function Profile() {
         </Card>
       </main>
     </div>
+  );
+}
+
+function ProfileAttestationCard({
+  attestation,
+  assertion,
+  to,
+}: {
+  attestation: NostrEvent;
+  assertion?: NostrEvent;
+  to: string;
+}) {
+  const parsed = parseAttestation(attestation);
+  const asserter = useAuthor(assertion?.pubkey ?? undefined);
+  const asserterName = assertion
+    ? getNostrDisplayName(asserter.data?.metadata, assertion.pubkey)
+    : 'Unknown author';
+  const asserterAvatar = assertion ? asserter.data?.metadata?.picture : undefined;
+  const assertionKind = assertion ? (getKindName(assertion.kind) ?? 'Unkown') : 'Event reference';
+
+  return (
+    <Link
+      to={to}
+      className="block rounded-md border border-slate-200 bg-slate-50/70 p-3 transition hover:border-slate-300 hover:bg-white"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <Badge className="capitalize">{parsed.status ?? 'unknown'}</Badge>
+        <span className="text-xs text-muted-foreground">
+          {new Date(attestation.created_at * 1000).toLocaleString()}
+        </span>
+      </div>
+      <p className="mt-2 line-clamp-2 text-sm text-slate-700">
+        {attestation.content.trim() || 'No attestation message.'}
+      </p>
+
+      <div className="mt-2 rounded-md border border-slate-200 bg-white/90 p-2">
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Avatar className="h-5 w-5 border border-slate-200">
+              <AvatarImage src={asserterAvatar} alt={asserterName} />
+              <AvatarFallback className="text-[9px]">{asserterName.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <p className="truncate text-[11px] font-medium text-slate-700">{asserterName}</p>
+          </div>
+          <Badge variant="outline" className="max-w-[48%] truncate text-[10px] font-medium">
+            {assertionKind}
+          </Badge>
+        </div>
+        <p className="mt-1 line-clamp-1 text-[11px] text-slate-600">
+          {assertion?.content.trim() || 'Assertion content unavailable.'}
+        </p>
+      </div>
+    </Link>
   );
 }
