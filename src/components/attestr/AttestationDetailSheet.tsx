@@ -1,4 +1,5 @@
 import type { NostrEvent } from '@nostrify/nostrify';
+import { Link } from 'react-router-dom';
 
 import {
   Dialog,
@@ -8,6 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { encodeEventPointer } from '@/lib/nostrEncodings';
 import { AttestationDetailContent } from './AttestationDetailContent';
 
 interface AttestationDetailSheetProps {
@@ -21,6 +24,14 @@ interface AttestationDetailSheetProps {
 }
 
 export function AttestationDetailSheet({ attestation, assertion, children, onUpdated, onDialogOpenChange, open, initialSection = 'overview' }: AttestationDetailSheetProps) {
+  const attestationPointer = encodeEventPointer(attestation);
+  const detailRootId = `attestation-detail-${attestation.id}`;
+
+  const jumpToComments = () => {
+    const commentsSection = document.querySelector(`#${detailRootId} #comments-section`) as HTMLElement | null;
+    commentsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onDialogOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -30,14 +41,24 @@ export function AttestationDetailSheet({ attestation, assertion, children, onUpd
           <DialogDescription>
             Review lifecycle, linked assertion, and social discussion.
           </DialogDescription>
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={jumpToComments}>
+              Jump to comments
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/attestations/${attestationPointer}`}>Permalink</Link>
+            </Button>
+          </div>
         </DialogHeader>
 
-        <AttestationDetailContent
-          attestation={attestation}
-          assertion={assertion}
-          onUpdated={onUpdated}
-          initialSection={initialSection}
-        />
+        <div id={detailRootId}>
+          <AttestationDetailContent
+            attestation={attestation}
+            assertion={assertion}
+            onUpdated={onUpdated}
+            initialSection={initialSection}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );

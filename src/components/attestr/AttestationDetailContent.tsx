@@ -1,17 +1,20 @@
 import type { NostrEvent } from '@nostrify/nostrify';
 import { useEffect, useMemo, useRef } from 'react';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 import { ZapButton } from '@/components/ZapButton';
+import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import { parseAttestation, type AttestationStatus } from '@/lib/attestation';
-import { NostrName } from '@/components/nostr/NostrName';
 import { NoteContent } from '@/components/NoteContent';
 import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
+import { formatKind } from '@/lib/nostrKinds';
+import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { AssertionPreview } from './AssertionPreview';
 import { AttestationZapStats } from './AttestationZapStats';
 
@@ -33,6 +36,9 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
   const parsed = parseAttestation(attestation);
   const attestationPointer = encodeEventPointer(attestation);
   const attestorNpub = encodeNpub(attestation.pubkey);
+  const attestor = useAuthor(attestation.pubkey);
+  const attestorName = getNostrDisplayName(attestor.data?.metadata, attestation.pubkey);
+  const attestorAvatar = attestor.data?.metadata?.picture;
   const { user } = useCurrentUser();
   const { mutateAsync: publishEvent, isPending } = useNostrPublish();
   const { toast } = useToast();
@@ -97,23 +103,23 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
 
       <div className="flex flex-wrap gap-2">
         <Badge>{parsed.status ?? 'unknown'}</Badge>
+        <Badge variant="outline">{formatKind(attestation.kind)}</Badge>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <ZapButton target={attestation} className="text-sm" />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-        >
-          Jump to comments
-        </Button>
       </div>
 
       <div className="grid gap-3 rounded-md border p-4">
         <div className="grid gap-1">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Attestor</p>
-          <p className="text-sm"><NostrName pubkey={attestation.pubkey} /></p>
+          <div className="flex min-w-0 items-center gap-2">
+            <Avatar className="h-7 w-7 border border-slate-200">
+              <AvatarImage src={attestorAvatar} alt={attestorName} />
+              <AvatarFallback className="text-[10px]">{attestorName.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <p className="truncate text-sm">{attestorName}</p>
+          </div>
           <p className="break-all font-mono text-xs text-muted-foreground">{attestorNpub}</p>
         </div>
         {details.map((item) => (
@@ -122,16 +128,16 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
             <p className="text-sm break-all">{item.value}</p>
           </div>
         ))}
-      </div>
 
-      <div className="space-y-3">
-        <p className="text-sm font-medium">Attestation message</p>
-        <div className="min-w-0 rounded-md border p-3">
-          {attestation.content.trim().length > 0 ? (
-            <NoteContent event={attestation} className="text-sm" />
-          ) : (
-            <p className="text-sm text-muted-foreground">No attestation message provided.</p>
-          )}
+        <div className="mt-1 space-y-2 rounded-md border bg-muted/30 p-3">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Attestation message</p>
+          <div className="min-w-0 rounded-md border bg-background p-3">
+            {attestation.content.trim().length > 0 ? (
+              <NoteContent event={attestation} className="text-sm" />
+            ) : (
+              <p className="text-sm text-muted-foreground">No attestation message provided.</p>
+            )}
+          </div>
         </div>
       </div>
 

@@ -3,14 +3,16 @@ import type { NostrEvent } from '@nostrify/nostrify';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { useEventSearch } from '@/hooks/useEventSearch';
-import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
+import { useAuthor } from '@/hooks/useAuthor';
+import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { AttestAssertionDialog } from './AttestAssertionDialog';
-import { NostrName } from '@/components/nostr/NostrName';
 import { AssertionDetailDialog } from './AssertionDetailDialog';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
 import { AttestrSearchFilters } from './AttestrSearchFilters';
-import { formatKind, getNostrKindOptions } from '@/lib/nostrKinds';
+import { formatKind, getKindName, getNostrKindOptions } from '@/lib/nostrKinds';
 
 interface AssertionSearchPanelProps {
   onSelect?: (event: NostrEvent) => void;
@@ -116,51 +118,17 @@ export function AssertionSearchPanel({
             <p className="text-sm text-muted-foreground">No assertion events found yet.</p>
           ) : (
             events.map((event) => {
-              const pointer = encodeEventPointer(event);
-              const npub = encodeNpub(event.pubkey);
-
               return (
-                <Card key={event.id}>
-                  <CardHeader className="space-y-2 pb-3">
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span>{formatKind(event.kind)}</span>
-                      <span>•</span>
-                      <span>{new Date(event.created_at * 1000).toLocaleString()}</span>
-                    </div>
-                    <p className="font-mono text-xs text-muted-foreground break-all">{pointer}</p>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    <div className="space-y-1">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Author</p>
-                      <p className="text-sm font-medium"><NostrName pubkey={event.pubkey} /></p>
-                      <p className="font-mono text-xs text-muted-foreground break-all">{npub}</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Summary</p>
-                      <AssertionContentRenderer event={event} mode="summary" />
-                    </div>
-
-                    <div className="flex w-full flex-wrap items-center justify-end gap-2">
-                      <AssertionDetailDialog assertion={event}>
-                        <Button variant="outline" size="sm">Open details</Button>
-                      </AssertionDetailDialog>
-
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => {
-                          onSelect?.(event);
-                          setAttestTarget(event);
-                          setAttestDialogOpen(true);
-                        }}
-                      >
-                        Attest
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <AssertionResultCard
+                  key={event.id}
+                  event={event}
+                  onOpenDetails={() => onSelect?.(event)}
+                  onAttest={() => {
+                    onSelect?.(event);
+                    setAttestTarget(event);
+                    setAttestDialogOpen(true);
+                  }}
+                />
               );
             })
           )}
@@ -172,5 +140,59 @@ export function AssertionSearchPanel({
           onOpenChange={setAttestDialogOpen}
         />
       </div>
+  );
+}
+
+function AssertionResultCard({
+  event,
+  onOpenDetails,
+  onAttest,
+}: {
+  event: NostrEvent;
+  onOpenDetails: () => void;
+  onAttest: () => void;
+}) {
+  const author = useAuthor(event.pubkey);
+  const displayName = getNostrDisplayName(author.data?.metadata, event.pubkey);
+  const avatarUrl = author.data?.metadata?.picture;
+
+  return (
+    <Card className="border-slate-200 bg-white/90 shadow-sm transition hover:border-slate-300 hover:bg-white">
+      <CardHeader className="space-y-3 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <Avatar className="h-8 w-8 border border-slate-200">
+              <AvatarImage src={avatarUrl} alt={displayName} />
+              <AvatarFallback className="text-[10px]">{displayName.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-slate-900">{displayName}</p>
+              <p className="truncate text-xs text-muted-foreground">{new Date(event.created_at * 1000).toLocaleString()}</p>
+            </div>
+          </div>
+          <Badge variant="outline" className="max-w-[45%] truncate text-[10px] font-medium">
+            {getKindName(event.kind) ?? 'Unkown'}
+          </Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        <AssertionContentRenderer event={event} mode="summary" />
+
+        <div className="flex w-full flex-wrap items-center justify-end gap-2">
+          <AssertionDetailDialog assertion={event}>
+            <Button variant="outline" size="sm" onClick={onOpenDetails}>Open details</Button>
+          </AssertionDetailDialog>
+
+          <Button
+            type="button"
+            size="sm"
+            onClick={onAttest}
+          >
+            Attest
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -223,7 +223,6 @@ function RecentAttestationCard({ event, assertionEvent }: { event: NostrEvent; a
           </div>
         </div>
 
-        <p className="truncate text-[11px] text-slate-500">{pointer}</p>
       </div>
     </Link>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { NostrEvent } from '@nostrify/nostrify';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,12 +9,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAttestationFeed, type AttestationFeedFilters } from '@/hooks/useAttestationFeed';
 import { parseAttestation } from '@/lib/attestation';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
+import { useAuthor } from '@/hooks/useAuthor';
+import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { AttestationDetailSheet } from './AttestationDetailSheet';
 import { AttestationCardStats } from './AttestationCardStats';
-import { NostrName } from '@/components/nostr/NostrName';
-import { encodeAssertionRef, encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
 import { ZapButton } from '@/components/ZapButton';
-import { formatKind } from '@/lib/nostrKinds';
+import { getKindName } from '@/lib/nostrKinds';
 
 interface AttestationFeedProps {
   filters: AttestationFeedFilters;
@@ -98,9 +99,14 @@ interface AttestationCardProps {
 
 function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) {
   const parsed = parseAttestation(event);
-  const attestorNpub = encodeNpub(event.pubkey);
-  const attestationPointer = encodeEventPointer(event);
-  const assertionRef = parsed.assertionRef ? encodeAssertionRef(parsed.assertionRef) : 'Missing';
+  const attestor = useAuthor(event.pubkey);
+  const asserter = useAuthor(assertion?.pubkey ?? '');
+  const attestorName = getNostrDisplayName(attestor.data?.metadata, event.pubkey);
+  const attestorAvatar = attestor.data?.metadata?.picture;
+  const asserterName = assertion ? getNostrDisplayName(asserter.data?.metadata, assertion.pubkey) : 'Unknown author';
+  const asserterAvatar = assertion ? asserter.data?.metadata?.picture : undefined;
+  const assertionContent = assertion?.content.trim() ?? '';
+  const assertionKindLabel = assertion ? (getKindName(assertion.kind) ?? 'Unkown') : 'Event reference';
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [initialSection, setInitialSection] = useState<'overview' | 'zaps' | 'comments'>('overview');
 
@@ -110,11 +116,16 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
   };
 
   return (
-    <Card>
+    <Card className="border-slate-200 bg-white/90 shadow-sm transition hover:border-slate-300 hover:bg-white">
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-        <div className="min-w-0 space-y-1">
-          <p className="text-sm font-medium">Attestor: <NostrName pubkey={event.pubkey} /></p>
-          <p className="font-mono text-xs text-muted-foreground break-all">{attestorNpub}</p>
+        <div className="min-w-0 space-y-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Avatar className="h-8 w-8 border border-slate-200">
+              <AvatarImage src={attestorAvatar} alt={attestorName} />
+              <AvatarFallback className="text-[10px]">{attestorName.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <p className="truncate text-sm font-medium text-slate-900">{attestorName}</p>
+          </div>
           <p className="text-xs text-muted-foreground">{new Date(event.created_at * 1000).toLocaleString()}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -123,14 +134,24 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="grid min-w-0 gap-1 text-sm">
-          <p>
-            Assertion kind: <span className="font-medium">{assertion ? formatKind(assertion.kind) : 'Unknown'}</span>
-          </p>
-          <p className="break-all text-muted-foreground">
-            Assertion ref: <span className="font-mono">{assertionRef}</span>
-          </p>
-          <p className="text-muted-foreground break-words">
+        <div className="space-y-3">
+          <p className="line-clamp-2 text-sm text-slate-700">{event.content.trim() || 'No attestation message.'}</p>
+
+          <div className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
+            <div className="flex min-w-0 items-start justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <Avatar className="h-6 w-6 border border-slate-200">
+                  <AvatarImage src={asserterAvatar} alt={asserterName} />
+                  <AvatarFallback className="text-[9px]">{asserterName.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <p className="truncate text-xs font-medium text-slate-800">{asserterName}</p>
+              </div>
+              <Badge variant="outline" className="max-w-[45%] truncate text-[10px] font-medium">{assertionKindLabel}</Badge>
+            </div>
+            <p className="mt-2 line-clamp-2 text-xs text-slate-600">{assertionContent || 'Assertion content unavailable.'}</p>
+          </div>
+
+          <p className="text-xs text-muted-foreground break-words">
             Validity window: {parsed.validFrom ? new Date(parsed.validFrom * 1000).toLocaleString() : 'open'} - {parsed.validTo ? new Date(parsed.validTo * 1000).toLocaleString() : 'open'}
           </p>
         </div>
@@ -144,9 +165,6 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
 
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
             <ZapButton target={event} className="text-xs" />
-            <Button asChild variant="ghost" size="sm">
-              <a href={`/attestations/${attestationPointer}`}>Permalink</a>
-            </Button>
             <AttestationDetailSheet
               attestation={event}
               assertion={assertion}
