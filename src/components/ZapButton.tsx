@@ -10,13 +10,15 @@ interface ZapButtonProps {
   className?: string;
   showCount?: boolean;
   zapData?: { count: number; totalSats: number; isLoading?: boolean };
+  allowSelfZap?: boolean;
 }
 
 export function ZapButton({
   target,
   className = "text-xs ml-1",
   showCount = true,
-  zapData: externalZapData
+  zapData: externalZapData,
+  allowSelfZap = false,
 }: ZapButtonProps) {
   const { user } = useCurrentUser();
   const { webln, activeNWC } = useWallet();
@@ -29,7 +31,7 @@ export function ZapButton({
   );
 
   // Don't show zap button if user is not logged in or is the author
-  if (!user || !target || user.pubkey === target.pubkey) {
+  if (!user || !target || (!allowSelfZap && user.pubkey === target.pubkey)) {
     return null;
   }
 

@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { CommentsSection } from '@/components/comments/CommentsSection';
-import { ZapButton } from '@/components/ZapButton';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
@@ -141,10 +140,6 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
       <div className="flex flex-wrap gap-2">
         <Badge>{parsed.status ?? 'unknown'}</Badge>
         <Badge variant="outline">{formatKind(attestation.kind)}</Badge>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <ZapButton target={attestation} className="text-sm" />
       </div>
 
       <div className="grid gap-3 rounded-md border p-4">
