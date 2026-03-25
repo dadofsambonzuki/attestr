@@ -12,13 +12,16 @@ import { getEventViewerUrl } from '@/lib/viewers';
 import { getProfilePath } from '@/lib/nostrEncodings';
 import { encodeEventPointer } from '@/lib/nostrEncodings';
 import { formatKind } from '@/lib/nostrKinds';
+import type { AttestationStatus } from '@/lib/attestation';
+import { AttestationStatusBadge } from './AttestationStatusBadge';
 
 interface AssertionPreviewProps {
   event?: NostrEvent;
   fallbackLabel?: string;
+  status?: AttestationStatus;
 }
 
-export function AssertionPreview({ event, fallbackLabel = 'Assertion event unavailable' }: AssertionPreviewProps) {
+export function AssertionPreview({ event, fallbackLabel = 'Assertion event unavailable', status }: AssertionPreviewProps) {
   const author = useAuthor(event?.pubkey);
   const authorName = event ? getNostrDisplayName(author.data?.metadata, event.pubkey) : 'Unknown author';
   const authorAvatar = event ? author.data?.metadata?.picture : undefined;
@@ -36,6 +39,9 @@ export function AssertionPreview({ event, fallbackLabel = 'Assertion event unava
   return (
     <Card className="bg-muted/30">
       <CardContent className="space-y-3 py-4">
+        <div>
+          <AttestationStatusBadge status={status} />
+        </div>
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <Avatar className="h-7 w-7 border border-slate-200">

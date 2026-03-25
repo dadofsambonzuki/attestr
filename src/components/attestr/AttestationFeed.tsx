@@ -16,6 +16,7 @@ import { AttestationDetailSheet } from './AttestationDetailSheet';
 import { AttestationCardStats } from './AttestationCardStats';
 import { ZapButton } from '@/components/ZapButton';
 import { getKindName } from '@/lib/nostrKinds';
+import { AttestationStatusBadge } from './AttestationStatusBadge';
 
 interface AttestationFeedProps {
   filters: AttestationFeedFilters;
@@ -131,9 +132,6 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
           </div>
           <p className="text-xs text-muted-foreground">{new Date(event.created_at * 1000).toLocaleString()}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Badge>{parsed.status ?? 'unknown'}</Badge>
-        </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -141,6 +139,9 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
           <p className="line-clamp-2 text-sm text-slate-700">{event.content.trim() || 'No attestation message.'}</p>
 
           <div className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
+            <div className="mb-2">
+              <AttestationStatusBadge status={parsed.status} />
+            </div>
             <div className="flex min-w-0 items-start justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <Avatar className="h-6 w-6 border border-slate-200">

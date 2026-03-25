@@ -22,6 +22,7 @@ import {
   createAttestationD,
   toUnixTimestamp,
 } from '@/lib/attestation';
+import { AttestationStatusLabel } from './AttestationStatusBadge';
 
 interface AttestationPublishFormProps {
   assertionEvent?: NostrEvent;
@@ -127,7 +128,7 @@ export function AttestationPublishForm({ assertionEvent, onPublished, embedded =
               <SelectContent>
                 {ATTESTATION_STATUSES.map((item) => (
                   <SelectItem key={item} value={item}>
-                    {item}
+                    <AttestationStatusLabel status={item} className="gap-1.5" />
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
+import { AttestationStatusBadge } from '@/components/attestr/AttestationStatusBadge';
 import { parseAttestation, ATTESTATION_KIND } from '@/lib/attestation';
 import { getKindName } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
@@ -210,7 +211,6 @@ function ProfileAttestationCard({
       className="block rounded-md border border-slate-200 bg-slate-50/70 p-3 transition hover:border-slate-300 hover:bg-white"
     >
       <div className="flex items-center justify-between gap-2">
-        <Badge className="capitalize">{parsed.status ?? 'unknown'}</Badge>
         <span className="text-xs text-muted-foreground">
           {new Date(attestation.created_at * 1000).toLocaleString()}
         </span>
@@ -220,6 +220,9 @@ function ProfileAttestationCard({
       </p>
 
       <div className="mt-2 rounded-md border border-slate-200 bg-white/90 p-2">
+        <div className="mb-2">
+          <AttestationStatusBadge status={parsed.status} />
+        </div>
         <div className="flex min-w-0 items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <Avatar className="h-5 w-5 border border-slate-200">

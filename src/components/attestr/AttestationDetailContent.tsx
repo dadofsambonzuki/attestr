@@ -20,6 +20,7 @@ import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { AssertionPreview } from './AssertionPreview';
 import { AttestationZapStats } from './AttestationZapStats';
 import { ATTESTATION_STATUS_DESCRIPTIONS } from '@/lib/attestation';
+import { AttestationStatusLabel } from './AttestationStatusBadge';
 
 interface AttestationDetailContentProps {
   attestation: NostrEvent;
@@ -73,7 +74,6 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
     setDurationMonths('1');
   }, [attestation.id, parsed.validFrom, parsed.validTo]);
 
-  const statusValue = parsed.status ?? 'unknown';
   const createdValue = new Date(attestation.created_at * 1000).toLocaleString();
   const dTagValue = parsed.d ?? 'n/a';
   const validFromValue = parsed.validFrom ? new Date(parsed.validFrom * 1000).toLocaleString() : 'n/a';
@@ -138,7 +138,6 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Badge>{parsed.status ?? 'unknown'}</Badge>
         <Badge variant="outline">{formatKind(attestation.kind)}</Badge>
       </div>
 
@@ -163,7 +162,9 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
           <div className="grid gap-2 sm:grid-cols-3">
             <div className="rounded-md border bg-background/80 p-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Status</p>
-              <p className="mt-1 text-sm break-all">{statusValue}</p>
+              <div className="mt-1 text-sm break-all">
+                <AttestationStatusLabel status={parsed.status} />
+              </div>
             </div>
             <div className="rounded-md border bg-background/80 p-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">d tag</p>
@@ -201,7 +202,7 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
 
       <div className="space-y-3">
         <p className="text-sm font-medium">Assertion</p>
-        <AssertionPreview event={assertion} />
+        <AssertionPreview event={assertion} status={parsed.status} />
       </div>
 
       <div className="space-y-3 rounded-md border p-4">

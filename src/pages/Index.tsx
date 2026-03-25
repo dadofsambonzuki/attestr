@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { AppHeader } from '@/components/AppHeader';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AttestationStatusBadge } from '@/components/attestr/AttestationStatusBadge';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useAttestationFeed } from '@/hooks/useAttestationFeed';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
@@ -185,9 +186,9 @@ function RecentAttestationCard({ event, assertionEvent }: { event: NostrEvent; a
       to={`/attestations/${pointer}`}
       className="block h-36 rounded-xl border border-slate-200 bg-slate-50/70 p-3 transition hover:border-slate-300 hover:bg-white"
     >
-      <div className="flex h-full flex-col justify-between gap-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
+        <div className="flex h-full flex-col justify-between gap-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
             <Avatar className="h-7 w-7 border border-slate-200">
               <AvatarImage src={avatarUrl} alt={displayName} />
               <AvatarFallback className="text-[10px]">{displayName.slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -196,20 +197,22 @@ function RecentAttestationCard({ event, assertionEvent }: { event: NostrEvent; a
               href={getProfilePath(event.pubkey)}
               className="truncate text-xs font-medium text-slate-800 hover:underline"
             >
-              {displayName}
-            </a>
+                {displayName}
+              </a>
+            </div>
           </div>
-          <Badge variant="secondary" className="capitalize">{parsed.status ?? 'unknown'}</Badge>
-        </div>
 
-        <div className="space-y-1">
-          <p className="line-clamp-2 text-xs text-slate-700">
-            {content || 'No attestation message.'}
-          </p>
+          <div className="space-y-1">
+            <p className="line-clamp-2 text-xs text-slate-700">
+              {content || 'No attestation message.'}
+            </p>
 
-          <div className="rounded-md border border-slate-200 bg-white/90 p-2">
-            <div className="flex min-w-0 items-start justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2">
+            <div className="rounded-md border border-slate-200 bg-white/90 p-2">
+              <div className="mb-2">
+                <AttestationStatusBadge status={parsed.status} />
+              </div>
+              <div className="flex min-w-0 items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                 <Avatar className="h-5 w-5 border border-slate-200">
                   <AvatarImage src={asserterAvatarUrl} alt={asserterName} />
                   <AvatarFallback className="text-[9px]">{asserterName.slice(0, 2).toUpperCase()}</AvatarFallback>
