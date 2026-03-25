@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { NoteContent } from '@/components/NoteContent';
 import { getEventViewerUrl } from '@/lib/viewers';
 import { encodeEventPointer } from '@/lib/nostrEncodings';
+import { formatKind } from '@/lib/nostrKinds';
 
 interface AssertionPreviewProps {
   event?: NostrEvent;
@@ -27,7 +28,7 @@ export function AssertionPreview({ event, fallbackLabel = 'Assertion event unava
     <Card className="bg-muted/30">
       <CardContent className="space-y-3 py-4">
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span>Kind {event.kind}</span>
+          <span>{formatKind(event.kind)}</span>
           <span>•</span>
           <span className="font-mono break-all">{encodeEventPointer(event)}</span>
           <span>•</span>

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import { AttestationFeed } from './AttestationFeed';
 import { AttestrSearchFilters } from './AttestrSearchFilters';
+import { formatKind } from '@/lib/nostrKinds';
 
 const statusOptions = ['all', 'verifying', 'valid', 'invalid', 'revoked'] as const;
 const timeWindowOptions = [
@@ -12,11 +13,11 @@ const timeWindowOptions = [
 ];
 const assertionKindOptions = [
   { label: 'Any kind', value: 'any' },
-  { label: 'Kind 1 (Short Text Note)', value: '1' },
-  { label: 'Kind 0 (Profile Metadata)', value: '0' },
-  { label: 'Kind 3 (Contacts)', value: '3' },
-  { label: 'Kind 6 (Repost)', value: '6' },
-  { label: 'Kind 30023 (Long-form Article)', value: '30023' },
+  { label: formatKind(1), value: '1' },
+  { label: formatKind(0), value: '0' },
+  { label: formatKind(3), value: '3' },
+  { label: formatKind(6), value: '6' },
+  { label: formatKind(30023), value: '30023' },
 ];
 
 export function AttestationsWorkspace() {
@@ -113,7 +114,7 @@ export function AttestationsWorkspace() {
           selectedValues: selectedAssertionKinds,
           onRemove: (value) => setSelectedAssertionKinds((prev) => prev.filter((item) => item !== value)),
           options: assertionKindOptions,
-          pillLabel: (value) => `Kind: ${value}`,
+          pillLabel: (value) => `Kind: ${formatKind(Number.parseInt(value, 10))}`,
         }}
       />
 

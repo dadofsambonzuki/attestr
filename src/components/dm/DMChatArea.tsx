@@ -18,6 +18,7 @@ import { ArrowLeft, Send, Loader2, AlertTriangle, Key, ShieldCheck } from 'lucid
 import { cn } from '@/lib/utils';
 import { NoteContent } from '@/components/NoteContent';
 import type { NostrEvent } from '@nostrify/nostrify';
+import { formatKind } from '@/lib/nostrKinds';
 
 interface DMChatAreaProps {
   pubkey: string | null;
@@ -120,10 +121,10 @@ const MessageBubble = memo(({
               </TooltipTrigger>
               <TooltipContent>
                 <p className="text-xs">
-                  {message.kind === 4 && "NIP-04 Kind 4 (Legacy DM)"}
-                  {message.kind === 14 && "NIP-17 Kind 14 (Private Message)"}
-                  {message.kind === 15 && "NIP-17 Kind 15 (Media)"}
-                  {message.kind !== 4 && message.kind !== 14 && message.kind !== 15 && `Kind ${message.kind}`}
+                  {message.kind === 4 && `NIP-04 ${formatKind(4)} (Legacy DM)`}
+                  {message.kind === 14 && `NIP-17 ${formatKind(14)}`}
+                  {message.kind === 15 && `NIP-17 ${formatKind(15)}`}
+                  {message.kind !== 4 && message.kind !== 14 && message.kind !== 15 && formatKind(message.kind)}
                 </p>
               </TooltipContent>
             </Tooltip>

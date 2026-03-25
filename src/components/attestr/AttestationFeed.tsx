@@ -13,6 +13,7 @@ import { AttestationCardStats } from './AttestationCardStats';
 import { NostrName } from '@/components/nostr/NostrName';
 import { encodeAssertionRef, encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
 import { ZapButton } from '@/components/ZapButton';
+import { formatKind } from '@/lib/nostrKinds';
 
 interface AttestationFeedProps {
   filters: AttestationFeedFilters;
@@ -112,7 +113,7 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div className="min-w-0 space-y-1">
-          <p className="text-sm font-medium">Attestor <NostrName pubkey={event.pubkey} /></p>
+          <p className="text-sm font-medium">Attestor: <NostrName pubkey={event.pubkey} /></p>
           <p className="font-mono text-xs text-muted-foreground break-all">{attestorNpub}</p>
           <p className="text-xs text-muted-foreground">{new Date(event.created_at * 1000).toLocaleString()}</p>
         </div>
@@ -124,7 +125,7 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
       <CardContent className="space-y-4">
         <div className="grid min-w-0 gap-1 text-sm">
           <p>
-            Assertion kind: <span className="font-medium">{assertion?.kind ?? 'Unknown'}</span>
+            Assertion kind: <span className="font-medium">{assertion ? formatKind(assertion.kind) : 'Unknown'}</span>
           </p>
           <p className="break-all text-muted-foreground">
             Assertion ref: <span className="font-mono">{assertionRef}</span>

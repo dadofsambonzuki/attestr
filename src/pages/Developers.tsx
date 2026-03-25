@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ATTESTATION_KIND } from '@/lib/attestation';
+import { formatKind } from '@/lib/nostrKinds';
 
 const attestationNipUrl = 'https://nostrhub.io/naddr1qvzqqqrcvypzp384u7n44r8rdq74988lqcmggww998jjg0rtzfd6dpufrxy9djk8qyfhwumn8ghj7un9d3shjtnyv9ujuct89uqqcct5w3jhxarpw35k7mnnaawl4h';
 
@@ -26,7 +27,7 @@ export default function Developers() {
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="secondary">Developers</Badge>
             {attestationKinds.map((kind) => (
-              <Badge key={kind}>Kind {kind}</Badge>
+              <Badge key={kind}>{formatKind(kind)}</Badge>
             ))}
           </div>
 
@@ -105,10 +106,10 @@ export default function Developers() {
                 <Send className="h-5 w-5" />
                 Publish an Attestation
               </CardTitle>
-              <CardDescription>Kind 31871</CardDescription>
+              <CardDescription>{formatKind(31871)}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-slate-700">
-              <p>Use attestation kind {ATTESTATION_KIND} and include the minimum tags for reference and status.</p>
+              <p>Use {formatKind(ATTESTATION_KIND)} and include the minimum tags for reference and status.</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li><code className="font-mono text-xs">d</code>: unique identifier for this attestation event</li>
                 <li><code className="font-mono text-xs">e</code> or <code className="font-mono text-xs">a</code>: exactly one target assertion reference</li>
@@ -138,10 +139,10 @@ export default function Developers() {
                 <FileSearch className="h-5 w-5" />
                 Attestation Request
               </CardTitle>
-              <CardDescription>Kind 31872</CardDescription>
+              <CardDescription>{formatKind(31872)}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-slate-700">
-              <p>Use kind 31872 to request an attestation from one or more attestors for a specific assertion.</p>
+              <p>Use {formatKind(31872)} to request an attestation from one or more attestors for a specific assertion.</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li>Include <code className="font-mono text-xs">d</code> and exactly one assertion reference tag.</li>
                 <li>Optionally add <code className="font-mono text-xs">p</code> tags for requested attestors.</li>
@@ -166,10 +167,10 @@ export default function Developers() {
                 <Code2 className="h-5 w-5" />
                 Attestor Recommendation
               </CardTitle>
-              <CardDescription>Kind 31873</CardDescription>
+              <CardDescription>{formatKind(31873)}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-slate-700">
-              <p>Use kind 31873 to recommend an attestor for specific event kinds.</p>
+              <p>Use {formatKind(31873)} to recommend an attestor for specific event kinds.</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li>Use <code className="font-mono text-xs">d</code> as <code className="font-mono text-xs">&lt;attestor-pubkey&gt;&lt;recommendation-id&gt;</code>.</li>
                 <li>Include <code className="font-mono text-xs">p</code> with the recommended attestor pubkey.</li>
@@ -196,10 +197,10 @@ export default function Developers() {
                 <ExternalLink className="h-5 w-5" />
                 Proficiency Declaration
               </CardTitle>
-              <CardDescription>Kind 11871</CardDescription>
+              <CardDescription>{formatKind(11871)}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-slate-700">
-              <p>Use replaceable kind 11871 to declare which event kinds an attestor can verify.</p>
+              <p>Use replaceable {formatKind(11871)} to declare which event kinds an attestor can verify.</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li>Include one or more <code className="font-mono text-xs">k</code> tags for supported kinds.</li>
               </ul>
@@ -226,7 +227,7 @@ export default function Developers() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-slate-700">
             <p>
-              Query attestations by kind, status, and assertion reference tags. Then parse tags into UI fields
+              Query attestations by event kind, status, and assertion reference tags. Then parse tags into UI fields
               (status, validity window, and reference type).
             </p>
             <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">

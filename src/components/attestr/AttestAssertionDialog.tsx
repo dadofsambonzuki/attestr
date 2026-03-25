@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { encodeEventPointer } from '@/lib/nostrEncodings';
+import { formatKind } from '@/lib/nostrKinds';
 import { AttestationPublishForm } from './AttestationPublishForm';
 
 interface AttestAssertionDialogProps {
@@ -23,7 +24,7 @@ export function AttestAssertionDialog({ assertionEvent, open, onOpenChange }: At
         <DialogHeader>
           <DialogTitle>Attest assertion event</DialogTitle>
           <DialogDescription className="break-words">
-            Kind {assertionEvent?.kind ?? 'unknown'} •{' '}
+            {assertionEvent ? formatKind(assertionEvent.kind) : 'Unknown kind'} •{' '}
             <span className="break-all font-mono text-xs">
               {assertionEvent ? encodeEventPointer(assertionEvent) : 'unknown'}
             </span>

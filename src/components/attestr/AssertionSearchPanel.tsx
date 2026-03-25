@@ -10,6 +10,7 @@ import { NostrName } from '@/components/nostr/NostrName';
 import { AssertionDetailDialog } from './AssertionDetailDialog';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
 import { AttestrSearchFilters } from './AttestrSearchFilters';
+import { formatKind } from '@/lib/nostrKinds';
 
 interface AssertionSearchPanelProps {
   onSelect?: (event: NostrEvent) => void;
@@ -93,13 +94,13 @@ export function AssertionSearchPanel({
         onRemove: (value) => setSelectedKinds((prev) => prev.filter((item) => item !== value)),
         options: [
           { label: 'Any kind', value: 'any' },
-          { label: 'Kind 1 (Short Text Note)', value: '1' },
-          { label: 'Kind 0 (Profile Metadata)', value: '0' },
-          { label: 'Kind 3 (Contacts)', value: '3' },
-          { label: 'Kind 6 (Repost)', value: '6' },
-          { label: 'Kind 30023 (Long-form Article)', value: '30023' },
+          { label: formatKind(1), value: '1' },
+          { label: formatKind(0), value: '0' },
+          { label: formatKind(3), value: '3' },
+          { label: formatKind(6), value: '6' },
+          { label: formatKind(30023), value: '30023' },
         ],
-        pillLabel: (value) => `Kind: ${value}`,
+        pillLabel: (value) => `Kind: ${formatKind(Number.parseInt(value, 10))}`,
       }}
       days={{
         id: 'search-window',
@@ -126,7 +127,7 @@ export function AssertionSearchPanel({
                 <Card key={event.id}>
                   <CardHeader className="space-y-2 pb-3">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span>Kind {event.kind}</span>
+                      <span>{formatKind(event.kind)}</span>
                       <span>•</span>
                       <span>{new Date(event.created_at * 1000).toLocaleString()}</span>
                     </div>

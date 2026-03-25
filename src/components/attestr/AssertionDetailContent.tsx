@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 import { NostrName } from '@/components/nostr/NostrName';
 import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
+import { formatKind } from '@/lib/nostrKinds';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
 import { AttestAssertionDialog } from './AttestAssertionDialog';
 
@@ -26,7 +27,7 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Badge>Kind {assertion.kind}</Badge>
+        <Badge>{formatKind(assertion.kind)}</Badge>
         <Button
           type="button"
           variant="outline"
@@ -45,7 +46,7 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
         </div>
         <div className="grid gap-1">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Kind</p>
-          <p className="text-sm">{assertion.kind}</p>
+          <p className="text-sm">{formatKind(assertion.kind)}</p>
         </div>
         <div className="grid gap-1">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Created</p>
