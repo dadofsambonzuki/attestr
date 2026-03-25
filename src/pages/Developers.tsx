@@ -112,8 +112,7 @@ export default function Developers() {
               <ul className="list-disc space-y-1 pl-5">
                 <li><code className="font-mono text-xs">d</code>: unique identifier for this attestation event</li>
                 <li><code className="font-mono text-xs">e</code> or <code className="font-mono text-xs">a</code>: target assertion reference</li>
-                <li><code className="font-mono text-xs">s</code>: lifecycle status (<code className="font-mono text-xs">accepted</code>, <code className="font-mono text-xs">rejected</code>, <code className="font-mono text-xs">verifying</code>, <code className="font-mono text-xs">verified</code>, <code className="font-mono text-xs">revoked</code>)</li>
-                <li><code className="font-mono text-xs">v</code>: optional validity (<code className="font-mono text-xs">valid</code>/<code className="font-mono text-xs">invalid</code>) when status is verified</li>
+                <li><code className="font-mono text-xs">s</code>: lifecycle status (<code className="font-mono text-xs">verifying</code>, <code className="font-mono text-xs">valid</code>, <code className="font-mono text-xs">invalid</code>, <code className="font-mono text-xs">revoked</code>)</li>
                 <li><code className="font-mono text-xs">valid_from</code>, <code className="font-mono text-xs">valid_to</code>: optional unix timestamps</li>
               </ul>
               <pre className="overflow-x-auto rounded-md border bg-slate-50 p-3 text-xs text-slate-800">
@@ -122,8 +121,7 @@ export default function Developers() {
   tags: [
     ['d', 'attestation-id'],
     ['e', '<assertion-event-id>'],
-    ['s', 'verified'],
-    ['v', 'valid'],
+    ['s', 'valid'],
     ['valid_from', '1735689600'],
     ['valid_to', '1767225600']
   ],
@@ -244,7 +242,6 @@ const cards = events.map((event) => {
   return {
     id: event.id,
     status: parsed.status,
-    validity: parsed.validity,
     validFrom: parsed.validFrom,
     validTo: parsed.validTo,
     note: event.content,

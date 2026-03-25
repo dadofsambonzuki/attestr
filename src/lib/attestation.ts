@@ -3,24 +3,20 @@ import { NKinds, type NostrEvent } from '@nostrify/nostrify';
 export const ATTESTATION_KIND = 31871;
 
 export const ATTESTATION_STATUSES = [
-  'accepted',
-  'rejected',
   'verifying',
-  'verified',
+  'valid',
+  'invalid',
   'revoked',
 ] as const;
 
 export type AttestationStatus = (typeof ATTESTATION_STATUSES)[number];
-export type AttestationValidity = 'valid' | 'invalid';
 
 export type AssertionRef =
   | { type: 'e'; value: string }
-  | { type: 'a'; value: string }
-  | { type: 'p'; value: string };
+  | { type: 'a'; value: string };
 
 export interface ParsedAttestation {
   status?: AttestationStatus;
-  validity?: AttestationValidity;
   validFrom?: number;
   validTo?: number;
   expiration?: number;
@@ -34,7 +30,6 @@ export function getTagValue(event: NostrEvent, tagName: string): string | undefi
 
 export function parseAttestation(event: NostrEvent): ParsedAttestation {
   const statusTag = getTagValue(event, 's');
-  const validityTag = getTagValue(event, 'v');
   const validFrom = parseUnixTag(event, 'valid_from');
   const validTo = parseUnixTag(event, 'valid_to');
   const expiration = parseUnixTag(event, 'expiration');
@@ -42,19 +37,15 @@ export function parseAttestation(event: NostrEvent): ParsedAttestation {
 
   const e = getTagValue(event, 'e');
   const a = getTagValue(event, 'a');
-  const p = getTagValue(event, 'p');
 
   const assertionRef = e
     ? { type: 'e' as const, value: e }
     : a
       ? { type: 'a' as const, value: a }
-      : p
-        ? { type: 'p' as const, value: p }
-        : undefined;
+      : undefined;
 
   return {
     status: isAttestationStatus(statusTag) ? statusTag : undefined,
-    validity: validityTag === 'valid' || validityTag === 'invalid' ? validityTag : undefined,
     validFrom,
     validTo,
     expiration,

@@ -118,7 +118,6 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge>{parsed.status ?? 'unknown'}</Badge>
-          {parsed.validity ? <Badge variant="secondary">{parsed.validity}</Badge> : null}
         </div>
       </CardHeader>
 

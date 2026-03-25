@@ -53,10 +53,6 @@ export function encodeAssertionRef(ref: AssertionRef): string {
     }
   }
 
-  if (ref.type === 'p') {
-    return encodeNpub(ref.value);
-  }
-
   const coordinate = parseCoordinate(ref.value);
   if (!coordinate) return ref.value;
 

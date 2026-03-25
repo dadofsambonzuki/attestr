@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { AttestationFeed } from './AttestationFeed';
 import { AttestrSearchFilters } from './AttestrSearchFilters';
 
-const statusOptions = ['all', 'accepted', 'rejected', 'verifying', 'verified', 'revoked'] as const;
+const statusOptions = ['all', 'verifying', 'valid', 'invalid', 'revoked'] as const;
 const timeWindowOptions = [
   { label: '7 days', value: '7' },
   { label: '30 days', value: '30' },

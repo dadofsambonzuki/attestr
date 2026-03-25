@@ -22,10 +22,10 @@ interface AttestationDetailContentProps {
   initialSection?: 'overview' | 'zaps' | 'comments';
 }
 
-const lifecycleActions: { label: string; status: AttestationStatus; validity?: 'valid' | 'invalid' }[] = [
+const lifecycleActions: { label: string; status: AttestationStatus }[] = [
   { label: 'Set verifying', status: 'verifying' },
-  { label: 'Set verified valid', status: 'verified', validity: 'valid' },
-  { label: 'Set verified invalid', status: 'verified', validity: 'invalid' },
+  { label: 'Set valid', status: 'valid' },
+  { label: 'Set invalid', status: 'invalid' },
   { label: 'Revoke', status: 'revoked' },
 ];
 
@@ -54,7 +54,6 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
   const details = useMemo(() => {
     return [
       { label: 'Status', value: parsed.status ?? 'unknown' },
-      { label: 'Validity', value: parsed.validity ?? 'n/a' },
       { label: 'Valid from', value: parsed.validFrom ? new Date(parsed.validFrom * 1000).toLocaleString() : 'n/a' },
       { label: 'Valid to', value: parsed.validTo ? new Date(parsed.validTo * 1000).toLocaleString() : 'n/a' },
       { label: 'Created', value: new Date(attestation.created_at * 1000).toLocaleString() },
@@ -62,14 +61,11 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
     ];
   }, [attestation, parsed]);
 
-  const updateStatus = async (status: AttestationStatus, validity?: 'valid' | 'invalid') => {
+  const updateStatus = async (status: AttestationStatus) => {
     if (!parsed.d) return;
 
-    const nextTags: string[][] = attestation.tags.filter(([name]) => name !== 's' && name !== 'v');
+    const nextTags: string[][] = attestation.tags.filter(([name]) => name !== 's');
     nextTags.push(['s', status]);
-    if (status === 'verified' && validity) {
-      nextTags.push(['v', validity]);
-    }
 
     try {
       await publishEvent({
@@ -101,7 +97,6 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
 
       <div className="flex flex-wrap gap-2">
         <Badge>{parsed.status ?? 'unknown'}</Badge>
-        {parsed.validity ? <Badge variant="secondary">{parsed.validity}</Badge> : null}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -157,7 +152,7 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
               <Button
                 key={action.label}
                 variant="outline"
-                onClick={() => updateStatus(action.status, action.validity)}
+                onClick={() => updateStatus(action.status)}
                 disabled={isPending}
               >
                 {action.label}

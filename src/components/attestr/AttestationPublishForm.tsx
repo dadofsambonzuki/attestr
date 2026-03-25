@@ -33,8 +33,7 @@ export function AttestationPublishForm({ assertionEvent, onPublished, embedded =
   const { mutateAsync: publishEvent, isPending } = useNostrPublish();
   const { toast } = useToast();
 
-  const [status, setStatus] = useState<AttestationStatus>('accepted');
-  const [validity, setValidity] = useState<'valid' | 'invalid'>('valid');
+  const [status, setStatus] = useState<AttestationStatus>('verifying');
   const [note, setNote] = useState('');
 
   const [useDurationMode, setUseDurationMode] = useState(false);
@@ -75,10 +74,6 @@ export function AttestationPublishForm({ assertionEvent, onPublished, embedded =
       createAssertionTag(assertionEvent),
       ['s', status],
     ];
-
-    if (status === 'verified') {
-      tags.push(['v', validity]);
-    }
 
     if (validFrom) tags.push(['valid_from', `${validFrom}`]);
     if (validTo) tags.push(['valid_to', `${validTo}`]);
@@ -131,19 +126,6 @@ export function AttestationPublishForm({ assertionEvent, onPublished, embedded =
                     {item}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="attestation-validity">Validity</Label>
-            <Select value={validity} onValueChange={(value) => setValidity(value as 'valid' | 'invalid')}>
-              <SelectTrigger id="attestation-validity" disabled={status !== 'verified'}>
-                <SelectValue placeholder="Select validity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="valid">valid</SelectItem>
-                <SelectItem value="invalid">invalid</SelectItem>
               </SelectContent>
             </Select>
           </div>
