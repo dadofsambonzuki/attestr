@@ -9,6 +9,7 @@ import { ATTESTATION_KIND } from '@/lib/attestation';
 import { formatKind } from '@/lib/nostrKinds';
 
 const attestationNipUrl = 'https://nostrhub.io/naddr1qvzqqqrcvypzp384u7n44r8rdq74988lqcmggww998jjg0rtzfd6dpufrxy9djk8qyfhwumn8ghj7un9d3shjtnyv9ujuct89uqqcct5w3jhxarpw35k7mnnaawl4h';
+const githubRepoUrl = 'https://github.com/dadofsambonzuki/attestr';
 
 export default function Developers() {
   const attestationKinds = [ATTESTATION_KIND, 31872, 31873, 11871];
@@ -38,9 +39,15 @@ export default function Developers() {
           </p>
 
           <div className="flex flex-wrap gap-3 pt-8">
-            <Button asChild>
+            <Button variant="outline" asChild>
               <a href={attestationNipUrl} target="_blank" rel="noreferrer noopener">
                 Read Attestation NIP
+                <ExternalLink className="ml-2 h-4 w-4" />
+              </a>
+            </Button>
+            <Button variant="outline" asChild>
+              <a href={githubRepoUrl} target="_blank" rel="noreferrer noopener">
+                View GitHub Repo
                 <ExternalLink className="ml-2 h-4 w-4" />
               </a>
             </Button>
