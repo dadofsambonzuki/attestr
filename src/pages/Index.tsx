@@ -184,7 +184,7 @@ function RecentAttestationCard({ event, assertionEvent }: { event: NostrEvent; a
   return (
     <Link
       to={`/attestations/${pointer}`}
-      className="block h-36 rounded-xl border border-slate-200 bg-slate-50/70 p-3 transition hover:border-slate-300 hover:bg-white"
+      className="block min-h-44 rounded-xl border border-slate-200 bg-slate-50/70 p-3 transition hover:border-slate-300 hover:bg-white"
     >
         <div className="flex h-full flex-col justify-between gap-2">
           <div className="flex items-start justify-between gap-2">
