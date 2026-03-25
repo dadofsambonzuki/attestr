@@ -83,7 +83,7 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
     if (!parsed.d) return;
 
     const nextTags: string[][] = attestation.tags.filter(
-      ([name]) => name !== 's' && name !== 'valid_from' && name !== 'valid_to' && name !== 'expiration',
+      ([name]) => name !== 's' && name !== 'v' && name !== 'valid_from' && name !== 'valid_to' && name !== 'expiration',
     );
     nextTags.push(['s', status]);
 
@@ -104,9 +104,9 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
     }
 
     if (validFrom) nextTags.push(['valid_from', `${validFrom}`]);
-    if (validTo) nextTags.push(['valid_to', `${validTo}`]);
-    if (!validTo && validFrom) {
-      nextTags.push(['expiration', `${validFrom + 30 * 24 * 60 * 60}`]);
+    if (validTo) {
+      nextTags.push(['valid_to', `${validTo}`]);
+      nextTags.push(['expiration', `${validTo}`]);
     }
 
     try {

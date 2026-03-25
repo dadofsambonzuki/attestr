@@ -78,10 +78,9 @@ export function AttestationPublishForm({ assertionEvent, onPublished, embedded =
     ];
 
     if (validFrom) tags.push(['valid_from', `${validFrom}`]);
-    if (validTo) tags.push(['valid_to', `${validTo}`]);
-
-    if (!validTo && validFrom) {
-      tags.push(['expiration', `${validFrom + 30 * 24 * 60 * 60}`]);
+    if (validTo) {
+      tags.push(['valid_to', `${validTo}`]);
+      tags.push(['expiration', `${validTo}`]);
     }
 
     try {
