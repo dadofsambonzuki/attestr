@@ -11,6 +11,7 @@ import { formatKind } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
 import { AttestAssertionDialog } from './AttestAssertionDialog';
+import { RequestAssertionDialog } from './RequestAssertionDialog';
 
 interface AssertionDetailContentProps {
   assertion: NostrEvent;
@@ -18,6 +19,7 @@ interface AssertionDetailContentProps {
 
 export function AssertionDetailContent({ assertion }: AssertionDetailContentProps) {
   const [attestDialogOpen, setAttestDialogOpen] = useState(false);
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const pointer = encodeEventPointer(assertion);
   const authorNpub = encodeNpub(assertion.pubkey);
   const author = useAuthor(assertion.pubkey);
@@ -40,6 +42,14 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
           onClick={() => setAttestDialogOpen(true)}
         >
           Attest
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setRequestDialogOpen(true)}
+        >
+          Request
         </Button>
       </div>
 
@@ -83,6 +93,12 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
         assertionEvent={assertion}
         open={attestDialogOpen}
         onOpenChange={setAttestDialogOpen}
+      />
+
+      <RequestAssertionDialog
+        assertionEvent={assertion}
+        open={requestDialogOpen}
+        onOpenChange={setRequestDialogOpen}
       />
     </div>
   );

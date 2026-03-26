@@ -3,24 +3,24 @@ import { useQuery } from '@tanstack/react-query';
 import { useNostr } from '@nostrify/react';
 import type { NostrEvent } from '@nostrify/nostrify';
 
-import { parseAddressCoordinate, parseAttestation, type AssertionRef } from '@/lib/attestation';
+import { parseAddressCoordinate, parseAssertionRef, type AssertionRef } from '@/lib/attestation';
 
 type AssertionEventMap = Record<string, NostrEvent>;
 
-export function useAssertionEvents(attestations: NostrEvent[]) {
+export function useAssertionEvents(eventsWithAssertionRef: NostrEvent[]) {
   const { nostr } = useNostr();
 
   const refs = useMemo(() => {
     const values: AssertionRef[] = [];
-    for (const event of attestations) {
-      const parsed = parseAttestation(event);
-      if (parsed.assertionRef) values.push(parsed.assertionRef);
+    for (const event of eventsWithAssertionRef) {
+      const assertionRef = parseAssertionRef(event);
+      if (assertionRef) values.push(assertionRef);
     }
     return values;
-  }, [attestations]);
+  }, [eventsWithAssertionRef]);
 
   return useQuery({
-    queryKey: ['nostr', 'assertion-events', attestations.map((e) => e.id)],
+    queryKey: ['nostr', 'assertion-events', eventsWithAssertionRef.map((e) => e.id)],
     queryFn: async () => {
       const eIds = refs.filter((r) => r.type === 'e').map((r) => r.value);
       const aCoords = refs.filter((r) => r.type === 'a').map((r) => r.value);
@@ -64,6 +64,6 @@ export function useAssertionEvents(attestations: NostrEvent[]) {
         byAddress,
       };
     },
-    enabled: attestations.length > 0,
+    enabled: eventsWithAssertionRef.length > 0,
   });
 }

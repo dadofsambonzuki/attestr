@@ -1,4 +1,5 @@
 import type { NostrEvent } from '@nostrify/nostrify';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
 import {
@@ -16,7 +17,7 @@ import { AttestationDetailContent } from './AttestationDetailContent';
 interface AttestationDetailSheetProps {
   attestation: NostrEvent;
   assertion?: NostrEvent;
-  children: React.ReactNode;
+  children?: ReactNode;
   onUpdated?: () => void;
   onDialogOpenChange?: (open: boolean) => void;
   open?: boolean;
@@ -34,7 +35,7 @@ export function AttestationDetailSheet({ attestation, assertion, children, onUpd
 
   return (
     <Dialog open={open} onOpenChange={onDialogOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children ? <DialogTrigger asChild>{children}</DialogTrigger> : null}
       <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Attestation details</DialogTitle>

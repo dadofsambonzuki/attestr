@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { useAuthor } from '@/hooks/useAuthor';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { getProfilePath } from '@/lib/nostrEncodings';
 import { AttestAssertionDialog } from './AttestAssertionDialog';
+import { RequestAssertionDialog } from './RequestAssertionDialog';
 import { AssertionDetailDialog } from './AssertionDetailDialog';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
 import { AttestrSearchFilters } from './AttestrSearchFilters';
@@ -17,6 +18,9 @@ import { formatKind, getKindName, getNostrKindOptions } from '@/lib/nostrKinds';
 
 interface AssertionSearchPanelProps {
   onSelect?: (event: NostrEvent) => void;
+  defaultAuthors?: string[];
+  actionMode?: 'attest' | 'request' | 'both';
+  onRequestPublished?: () => void;
 }
 
 const timeRanges = [
@@ -28,6 +32,9 @@ const timeRanges = [
 
 export function AssertionSearchPanel({
   onSelect,
+  defaultAuthors = [],
+  actionMode = 'both',
+  onRequestPublished,
 }: AssertionSearchPanelProps) {
   const [queryInput, setQueryInput] = useState('');
   const [authorInput, setAuthorInput] = useState('');
@@ -37,6 +44,18 @@ export function AssertionSearchPanel({
   const [days, setDays] = useState(30);
   const [attestTarget, setAttestTarget] = useState<NostrEvent | undefined>();
   const [attestDialogOpen, setAttestDialogOpen] = useState(false);
+  const [requestTarget, setRequestTarget] = useState<NostrEvent | undefined>();
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (defaultAuthors.length === 0) return;
+
+    setSelectedAuthors((prev) => {
+      if (prev.length > 0) return prev;
+      const deduped = new Set(defaultAuthors.map((value) => value.trim()).filter(Boolean));
+      return [...deduped.values()];
+    });
+  }, [defaultAuthors]);
 
   const params = useMemo(() => {
     const kinds = selectedKinds
@@ -123,12 +142,17 @@ export function AssertionSearchPanel({
               <AssertionResultCard
                 key={event.id}
                 event={event}
-                onOpenDetails={() => onSelect?.(event)}
                 onAttest={() => {
                   onSelect?.(event);
                   setAttestTarget(event);
                   setAttestDialogOpen(true);
                 }}
+                onRequest={() => {
+                  onSelect?.(event);
+                  setRequestTarget(event);
+                  setRequestDialogOpen(true);
+                }}
+                actionMode={actionMode}
               />
             );
           })
@@ -140,25 +164,39 @@ export function AssertionSearchPanel({
         open={attestDialogOpen}
         onOpenChange={setAttestDialogOpen}
       />
+
+      <RequestAssertionDialog
+        assertionEvent={requestTarget}
+        open={requestDialogOpen}
+        onOpenChange={setRequestDialogOpen}
+        onPublished={onRequestPublished}
+      />
     </div>
   );
 }
 
 function AssertionResultCard({
   event,
-  onOpenDetails,
   onAttest,
+  onRequest,
+  actionMode,
 }: {
   event: NostrEvent;
-  onOpenDetails: () => void;
   onAttest: () => void;
+  onRequest: () => void;
+  actionMode: 'attest' | 'request' | 'both';
 }) {
   const author = useAuthor(event.pubkey);
   const displayName = getNostrDisplayName(author.data?.metadata, event.pubkey);
   const avatarUrl = author.data?.metadata?.picture;
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   return (
-    <Card className="border-slate-200 bg-white/90 shadow-sm transition hover:border-slate-300 hover:bg-white">
+    <>
+      <Card
+        className="cursor-pointer border-slate-200 bg-white/90 shadow-sm transition hover:border-slate-300 hover:bg-white"
+        onClick={() => setIsDetailOpen(true)}
+      >
       <CardHeader className="space-y-3 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
@@ -186,19 +224,38 @@ function AssertionResultCard({
         <AssertionContentRenderer event={event} mode="summary" />
 
         <div className="flex w-full flex-wrap items-center justify-end gap-2">
-          <AssertionDetailDialog assertion={event}>
-            <Button variant="outline" size="sm" onClick={onOpenDetails}>Open details</Button>
-          </AssertionDetailDialog>
+          <Button
+            type="button"
+            size="sm"
+            onClick={(event) => {
+              event.stopPropagation();
+              onAttest();
+            }}
+            className={actionMode === 'request' ? 'hidden' : undefined}
+          >
+            Attest
+          </Button>
 
           <Button
             type="button"
             size="sm"
-            onClick={onAttest}
+            onClick={(event) => {
+              event.stopPropagation();
+              onRequest();
+            }}
+            className={actionMode === 'attest' ? 'hidden' : undefined}
           >
-            Attest
+            Request
           </Button>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+
+      <AssertionDetailDialog
+        assertion={event}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+      />
+    </>
   );
 }

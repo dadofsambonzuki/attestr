@@ -1,4 +1,5 @@
 import type { NostrEvent } from '@nostrify/nostrify';
+import type { ReactNode } from 'react';
 
 import {
   Dialog,
@@ -12,13 +13,15 @@ import { AssertionDetailContent } from './AssertionDetailContent';
 
 interface AssertionDetailDialogProps {
   assertion: NostrEvent;
-  children: React.ReactNode;
+  children?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AssertionDetailDialog({ assertion, children }: AssertionDetailDialogProps) {
+export function AssertionDetailDialog({ assertion, children, open, onOpenChange }: AssertionDetailDialogProps) {
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children ? <DialogTrigger asChild>{children}</DialogTrigger> : null}
       <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Assertion details</DialogTitle>

@@ -1,0 +1,174 @@
+import { useMemo, useState } from 'react';
+import type { NostrEvent } from '@nostrify/nostrify';
+import { Loader2 } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { LoginArea } from '@/components/auth/LoginArea';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNostrPublish } from '@/hooks/useNostrPublish';
+import { useToast } from '@/hooks/useToast';
+import {
+  ATTESTATION_REQUEST_KIND,
+  createAssertionTag,
+  createAttestationRequestD,
+} from '@/lib/attestation';
+import { encodeNpub } from '@/lib/nostrEncodings';
+
+interface AttestationRequestPublishFormProps {
+  assertionEvent?: NostrEvent;
+  onPublished?: () => void;
+  embedded?: boolean;
+}
+
+export function AttestationRequestPublishForm({
+  assertionEvent,
+  onPublished,
+  embedded = false,
+}: AttestationRequestPublishFormProps) {
+  const { user } = useCurrentUser();
+  const { mutateAsync: publishEvent, isPending } = useNostrPublish();
+  const { toast } = useToast();
+
+  const [requestId, setRequestId] = useState('');
+  const [requestMessage, setRequestMessage] = useState('');
+  const [attestorInput, setAttestorInput] = useState('');
+  const [requestedAttestors, setRequestedAttestors] = useState<string[]>([]);
+
+  const canSubmit = Boolean(user && assertionEvent);
+  const requestorNpub = useMemo(() => (user ? encodeNpub(user.pubkey) : null), [user]);
+
+  const handlePublish = async () => {
+    if (!user || !assertionEvent) {
+      toast({
+        title: 'No assertion selected',
+        description: 'Choose an assertion event before publishing a request.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const d = requestId.trim().length > 0
+      ? `${user.pubkey}${requestId.trim()}`
+      : createAttestationRequestD(user.pubkey, assertionEvent);
+
+    const tags: string[][] = [
+      ['d', d],
+      createAssertionTag(assertionEvent),
+      ...requestedAttestors.map((pubkey) => ['p', pubkey]),
+    ];
+
+    try {
+      await publishEvent({
+        kind: ATTESTATION_REQUEST_KIND,
+        tags,
+        content: requestMessage.trim(),
+      });
+
+      setRequestId('');
+      setRequestMessage('');
+      setAttestorInput('');
+      setRequestedAttestors([]);
+      onPublished?.();
+      toast({
+        title: 'Request published',
+        description: 'Your attestation request event is now on relays.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Publish failed',
+        description: error instanceof Error ? error.message : 'Unable to publish attestation request.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const formBody = (
+    <div className="space-y-5">
+      {!user ? (
+        <div className="space-y-3 rounded-md border border-dashed p-4 text-sm">
+          <p className="text-muted-foreground">Log in to publish attestation requests.</p>
+          <LoginArea />
+        </div>
+      ) : null}
+
+      {requestorNpub ? (
+        <p className="text-xs text-muted-foreground">
+          Requestor: <span className="font-mono">{requestorNpub}</span>
+        </p>
+      ) : null}
+
+      <div className="space-y-2">
+        <Label htmlFor="request-id">Request identifier (optional)</Label>
+        <Input
+          id="request-id"
+          value={requestId}
+          onChange={(e) => setRequestId(e.target.value)}
+          placeholder="e.g. id-check-q2-2026"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="request-attestor">Requested attestor pubkey (optional)</Label>
+        <div className="flex items-center gap-2">
+          <Input
+            id="request-attestor"
+            value={attestorInput}
+            onChange={(e) => setAttestorInput(e.target.value)}
+            placeholder="hex pubkey"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              const value = attestorInput.trim();
+              if (!value) return;
+              setRequestedAttestors((prev) => (prev.includes(value) ? prev : [...prev, value]));
+              setAttestorInput('');
+            }}
+          >
+            Add
+          </Button>
+        </div>
+      </div>
+
+      {requestedAttestors.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {requestedAttestors.map((attestor) => (
+            <Button
+              key={attestor}
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setRequestedAttestors((prev) => prev.filter((item) => item !== attestor))}
+              className="font-mono text-[11px]"
+            >
+              {encodeNpub(attestor)} ×
+            </Button>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="space-y-2">
+        <Label htmlFor="request-message">Request message</Label>
+        <Textarea
+          id="request-message"
+          value={requestMessage}
+          onChange={(e) => setRequestMessage(e.target.value)}
+          placeholder="Describe what you want attested and why."
+          className="min-h-[110px]"
+        />
+      </div>
+
+      <Button disabled={!canSubmit || isPending} onClick={handlePublish} className="w-full gap-2">
+        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+        Publish attestation request
+      </Button>
+    </div>
+  );
+
+  if (embedded) return formBody;
+  return <div className="space-y-5">{formBody}</div>;
+}

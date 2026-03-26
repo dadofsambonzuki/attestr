@@ -40,6 +40,14 @@ export function AppHeader() {
             Attestations
           </NavLink>
           <NavLink
+            to="/marketplace"
+            className={({ isActive }) =>
+              `inline-flex h-10 items-center justify-center rounded-md px-2.5 py-2 text-xs transition sm:px-3 sm:text-sm ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
+            }
+          >
+            Marketplace
+          </NavLink>
+          <NavLink
             to="/developers"
             className={({ isActive }) =>
               `inline-flex h-10 items-center justify-center rounded-md px-2.5 py-2 text-xs transition sm:px-3 sm:text-sm ${isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`

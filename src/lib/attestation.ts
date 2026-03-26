@@ -1,6 +1,9 @@
 import { NKinds, type NostrEvent } from '@nostrify/nostrify';
 
 export const ATTESTATION_KIND = 31871;
+export const ATTESTATION_REQUEST_KIND = 31872;
+export const ATTESTOR_RECOMMENDATION_KIND = 31873;
+export const ATTESTOR_PROFICIENCY_DECLARATION_KIND = 11871;
 
 export const ATTESTATION_STATUSES = [
   'verifying',
@@ -35,6 +38,21 @@ export interface ParsedAttestation {
   assertionRef?: AssertionRef;
 }
 
+export interface ParsedAttestationRequest {
+  d?: string;
+  assertionRef?: AssertionRef;
+}
+
+export interface ParsedAttestorRecommendation {
+  d?: string;
+  recommendedAttestor?: string;
+  kinds: number[];
+}
+
+export interface ParsedAttestorProficiencyDeclaration {
+  kinds: number[];
+}
+
 export function getTagValue(event: NostrEvent, tagName: string): string | undefined {
   return event.tags.find(([name]) => name === tagName)?.[1];
 }
@@ -46,14 +64,7 @@ export function parseAttestation(event: NostrEvent): ParsedAttestation {
   const expiration = parseUnixTag(event, 'expiration');
   const d = getTagValue(event, 'd');
 
-  const e = getTagValue(event, 'e');
-  const a = getTagValue(event, 'a');
-
-  const assertionRef = e
-    ? { type: 'e' as const, value: e }
-    : a
-      ? { type: 'a' as const, value: a }
-      : undefined;
+  const assertionRef = parseAssertionRef(event);
 
   return {
     status: isAttestationStatus(statusTag) ? statusTag : undefined,
@@ -63,6 +74,53 @@ export function parseAttestation(event: NostrEvent): ParsedAttestation {
     d,
     assertionRef,
   };
+}
+
+export function parseAttestationRequest(event: NostrEvent): ParsedAttestationRequest {
+  return {
+    d: getTagValue(event, 'd'),
+    assertionRef: parseAssertionRef(event),
+  };
+}
+
+export function parseAttestorRecommendation(event: NostrEvent): ParsedAttestorRecommendation {
+  return {
+    d: getTagValue(event, 'd'),
+    recommendedAttestor: getTagValue(event, 'p'),
+    kinds: parseKindTags(event),
+  };
+}
+
+export function parseAttestorProficiencyDeclaration(event: NostrEvent): ParsedAttestorProficiencyDeclaration {
+  return {
+    kinds: parseKindTags(event),
+  };
+}
+
+export function parseAssertionRef(event: NostrEvent): AssertionRef | undefined {
+  const e = getTagValue(event, 'e');
+  const a = getTagValue(event, 'a');
+
+  return e
+    ? { type: 'e', value: e }
+    : a
+      ? { type: 'a', value: a }
+      : undefined;
+}
+
+export function parseKindTags(event: NostrEvent): number[] {
+  const deduped = new Set<number>();
+
+  for (const [name, value] of event.tags) {
+    if (name !== 'k' || !value) continue;
+
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) {
+      deduped.add(parsed);
+    }
+  }
+
+  return [...deduped.values()].sort((a, b) => a - b);
 }
 
 export function createAssertionTag(event: NostrEvent): string[] {
@@ -100,6 +158,11 @@ export function parseAddressCoordinate(coordinate: string): { kind: number; pubk
 export function createAttestationD(assertionEvent: NostrEvent): string {
   const now = Math.floor(Date.now() / 1000);
   return `${assertionEvent.pubkey.slice(0, 8)}:${assertionEvent.id.slice(0, 12)}:${now}`;
+}
+
+export function createAttestationRequestD(requestorPubkey: string, assertionEvent: NostrEvent): string {
+  const now = Math.floor(Date.now() / 1000);
+  return `${requestorPubkey.slice(0, 8)}:${assertionEvent.id.slice(0, 12)}:${now}`;
 }
 
 export function toUnixTimestamp(dateTimeLocal: string): number | undefined {

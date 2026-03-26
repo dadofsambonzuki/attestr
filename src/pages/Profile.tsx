@@ -1,21 +1,35 @@
 import { useSeoMeta } from '@unhead/react';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AppHeader } from '@/components/AppHeader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { AttestationStatusBadge } from '@/components/attestr/AttestationStatusBadge';
-import { parseAttestation, ATTESTATION_KIND } from '@/lib/attestation';
-import { getKindName } from '@/lib/nostrKinds';
+import {
+  ATTESTATION_KIND,
+  ATTESTATION_REQUEST_KIND,
+  ATTESTOR_PROFICIENCY_DECLARATION_KIND,
+  ATTESTOR_RECOMMENDATION_KIND,
+  parseAttestation,
+  parseAttestationRequest,
+  parseAttestorProficiencyDeclaration,
+  parseAttestorRecommendation,
+} from '@/lib/attestation';
+import { formatKind, getKindName } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
-import { encodeEventPointer, encodeNpub } from '@/lib/nostrEncodings';
+import { encodeEventPointer, encodeNpub, getProfilePath } from '@/lib/nostrEncodings';
 import { normalizeToPubkey } from '@/lib/nostrIdentity';
+import { AttestorRecommendationDialog } from '@/components/attestr/AttestorRecommendationDialog';
+import { ProficiencyDeclarationDialog } from '@/components/attestr/ProficiencyDeclarationDialog';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 interface ClientProfileLink {
@@ -36,8 +50,12 @@ export default function Profile() {
   const pubkey = identifier ? normalizeToPubkey(identifier) : null;
   const npub = pubkey ? encodeNpub(pubkey) : null;
   const { nostr } = useNostr();
+  const { user } = useCurrentUser();
+  const [recommendDialogOpen, setRecommendDialogOpen] = useState(false);
+  const [proficiencyDialogOpen, setProficiencyDialogOpen] = useState(false);
 
   const author = useAuthor(pubkey ?? undefined);
+  const isOwnProfile = Boolean(user?.pubkey && pubkey && user.pubkey === pubkey);
 
   const attestationsQuery = useQuery({
     queryKey: ['nostr', 'profile-attestations', pubkey ?? ''],
@@ -55,8 +73,125 @@ export default function Profile() {
     enabled: !!pubkey,
   });
 
-  const attestations = attestationsQuery.data ?? [];
+  const requestsFromQuery = useQuery({
+    queryKey: ['nostr', 'profile-attestation-requests-from', pubkey ?? ''],
+    queryFn: async () => {
+      if (!pubkey) return [];
+
+      const events = await nostr.query([
+        {
+          kinds: [ATTESTATION_REQUEST_KIND],
+          authors: [pubkey],
+          limit: 100,
+        },
+      ], { signal: AbortSignal.timeout(6000) });
+
+      return groupLatestByPubkeyAndD(events).sort((a, b) => b.created_at - a.created_at);
+    },
+    enabled: !!pubkey,
+  });
+
+  const requestsToQuery = useQuery({
+    queryKey: ['nostr', 'profile-attestation-requests-to', pubkey ?? ''],
+    queryFn: async () => {
+      if (!pubkey) return [];
+
+      const events = await nostr.query([
+        {
+          kinds: [ATTESTATION_REQUEST_KIND],
+          '#p': [pubkey],
+          limit: 100,
+        },
+      ], { signal: AbortSignal.timeout(6000) });
+
+      return groupLatestByPubkeyAndD(events).sort((a, b) => b.created_at - a.created_at);
+    },
+    enabled: !!pubkey,
+  });
+
+  const recommendationsToQuery = useQuery({
+    queryKey: ['nostr', 'profile-attestor-recommendations-to', pubkey ?? ''],
+    queryFn: async () => {
+      if (!pubkey) return [];
+
+      const events = await nostr.query([
+        {
+          kinds: [ATTESTOR_RECOMMENDATION_KIND],
+          '#p': [pubkey],
+          limit: 100,
+        },
+      ], { signal: AbortSignal.timeout(6000) });
+
+      return groupLatestByPubkeyAndD(events).sort((a, b) => b.created_at - a.created_at);
+    },
+    enabled: !!pubkey,
+  });
+
+  const recommendationsFromQuery = useQuery({
+    queryKey: ['nostr', 'profile-attestor-recommendations-from', pubkey ?? ''],
+    queryFn: async () => {
+      if (!pubkey) return [];
+
+      const events = await nostr.query([
+        {
+          kinds: [ATTESTOR_RECOMMENDATION_KIND],
+          authors: [pubkey],
+          limit: 100,
+        },
+      ], { signal: AbortSignal.timeout(6000) });
+
+      return groupLatestByPubkeyAndD(events).sort((a, b) => b.created_at - a.created_at);
+    },
+    enabled: !!pubkey,
+  });
+
+  const proficiencyQuery = useQuery({
+    queryKey: ['nostr', 'profile-proficiency-declaration', pubkey ?? ''],
+    queryFn: async () => {
+      if (!pubkey) return undefined;
+
+      const events = await nostr.query([
+        {
+          kinds: [ATTESTOR_PROFICIENCY_DECLARATION_KIND],
+          authors: [pubkey],
+          limit: 20,
+        },
+      ], { signal: AbortSignal.timeout(6000) });
+
+      return events.sort((a, b) => b.created_at - a.created_at)[0];
+    },
+    enabled: !!pubkey,
+  });
+
+  const attestations = useMemo(() => attestationsQuery.data ?? [], [attestationsQuery.data]);
+  const requestsFrom = useMemo(() => requestsFromQuery.data ?? [], [requestsFromQuery.data]);
+  const requestsTo = useMemo(() => requestsToQuery.data ?? [], [requestsToQuery.data]);
+  const recommendationsTo = useMemo(() => recommendationsToQuery.data ?? [], [recommendationsToQuery.data]);
+  const recommendationsFrom = useMemo(() => recommendationsFromQuery.data ?? [], [recommendationsFromQuery.data]);
+  const proficiency = proficiencyQuery.data;
+
   const { data: assertionData } = useAssertionEvents(attestations);
+  const { data: requestAssertionData } = useAssertionEvents([...requestsFrom, ...requestsTo]);
+
+  const proficiencyKinds = useMemo(
+    () => (proficiency ? parseAttestorProficiencyDeclaration(proficiency).kinds : []),
+    [proficiency],
+  );
+
+  const recommendedKindCounts = useMemo(() => {
+    const counts = new Map<number, number>();
+
+    for (const recommendation of recommendationsTo) {
+      if (recommendation.pubkey === pubkey) continue;
+
+      const parsed = parseAttestorRecommendation(recommendation);
+      for (const kind of parsed.kinds) {
+        counts.set(kind, (counts.get(kind) ?? 0) + 1);
+      }
+    }
+
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+  }, [recommendationsTo, pubkey]);
 
   useSeoMeta({
     title: pubkey ? 'Profile • Attestr' : 'Profile not found • Attestr',
@@ -115,7 +250,75 @@ export default function Profile() {
                   View on {client.label}
                 </a>
               ))}
+
+              {!isOwnProfile && user ? (
+                <AttestorRecommendationDialog
+                  recommendedAttestorPubkey={pubkey}
+                  open={recommendDialogOpen}
+                  onOpenChange={setRecommendDialogOpen}
+                  onPublished={() => {
+                    void recommendationsToQuery.refetch();
+                  }}
+                >
+                  <Button variant="outline" size="sm">
+                    Recommend this attestor
+                  </Button>
+                </AttestorRecommendationDialog>
+              ) : null}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200 bg-white/90 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+            <CardTitle>Attestor Proficiency Declaration</CardTitle>
+            {isOwnProfile ? (
+              <ProficiencyDeclarationDialog
+                existing={proficiency}
+                open={proficiencyDialogOpen}
+                onOpenChange={setProficiencyDialogOpen}
+                onPublished={() => proficiencyQuery.refetch()}
+              >
+                <Button size="sm" variant="outline">
+                  {proficiency ? 'Edit declaration' : 'Add declaration'}
+                </Button>
+              </ProficiencyDeclarationDialog>
+            ) : null}
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {proficiencyQuery.isLoading ? (
+              <Skeleton className="h-14 w-full" />
+            ) : proficiency ? (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {proficiencyKinds.map((kind) => (
+                    <Badge key={kind} variant="secondary">
+                      {formatKind(kind)}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Last updated: {new Date(proficiency.created_at * 1000).toLocaleString()}
+                </p>
+
+                {recommendedKindCounts.length > 0 ? (
+                  <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50/70 p-3">
+                    <p className="text-xs font-medium text-slate-700">Recommended by others</p>
+                    <div className="flex flex-wrap gap-2">
+                      {recommendedKindCounts.map(([kind, count]) => (
+                        <Badge key={`recommended-${kind}`} variant="outline">
+                          {formatKind(kind)} × {count}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No proficiency declaration published for this profile yet.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -157,32 +360,115 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        <Card className="border-dashed border-slate-300 bg-white/80 shadow-sm">
-          <CardHeader>
-            <CardTitle>Attestation Requests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Coming soon - requests (kind 31872) authored by this user.</p>
-          </CardContent>
-        </Card>
+        <section className="grid gap-6 md:grid-cols-2">
+          <Card className="border-slate-200 bg-white/90 shadow-sm">
+            <CardHeader>
+              <CardTitle>Requests from this attestor</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {requestsFromQuery.isLoading ? (
+                <div className="space-y-2">
+                  {[0, 1].map((row) => (
+                    <Skeleton key={row} className="h-14 w-full" />
+                  ))}
+                </div>
+              ) : requestsFrom.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No outgoing attestation requests yet.</p>
+              ) : (
+                requestsFrom.map((request) => {
+                  const parsed = parseAttestationRequest(request);
+                  const assertion = parsed.assertionRef
+                    ? parsed.assertionRef.type === 'e'
+                      ? requestAssertionData?.byId[parsed.assertionRef.value]
+                      : parsed.assertionRef.type === 'a'
+                        ? requestAssertionData?.byAddress[parsed.assertionRef.value]
+                        : undefined
+                    : undefined;
 
-        <Card className="border-dashed border-slate-300 bg-white/80 shadow-sm">
-          <CardHeader>
-            <CardTitle>Attestor Recommendations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Coming soon - recommendations (kind 31873) authored by this user.</p>
-          </CardContent>
-        </Card>
+                  return (
+                    <ProfileRequestCard key={request.id} request={request} assertion={assertion} />
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
 
-        <Card className="border-dashed border-slate-300 bg-white/80 shadow-sm">
-          <CardHeader>
-            <CardTitle>Attestor Proficiency Declarations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Coming soon - proficiency declarations (kind 11871) for this user.</p>
-          </CardContent>
-        </Card>
+          <Card className="border-slate-200 bg-white/90 shadow-sm">
+            <CardHeader>
+              <CardTitle>Requests to this attestor</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {requestsToQuery.isLoading ? (
+                <div className="space-y-2">
+                  {[0, 1].map((row) => (
+                    <Skeleton key={row} className="h-14 w-full" />
+                  ))}
+                </div>
+              ) : requestsTo.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No incoming attestation requests yet.</p>
+              ) : (
+                requestsTo.map((request) => {
+                  const parsed = parseAttestationRequest(request);
+                  const assertion = parsed.assertionRef
+                    ? parsed.assertionRef.type === 'e'
+                      ? requestAssertionData?.byId[parsed.assertionRef.value]
+                      : parsed.assertionRef.type === 'a'
+                        ? requestAssertionData?.byAddress[parsed.assertionRef.value]
+                        : undefined
+                    : undefined;
+
+                  return (
+                    <ProfileRequestCard key={request.id} request={request} assertion={assertion} />
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="grid gap-6 md:grid-cols-2">
+          <Card className="border-slate-200 bg-white/90 shadow-sm">
+            <CardHeader>
+              <CardTitle>Recommendations from this attestor</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {recommendationsFromQuery.isLoading ? (
+                <div className="space-y-2">
+                  {[0, 1].map((row) => (
+                    <Skeleton key={row} className="h-14 w-full" />
+                  ))}
+                </div>
+              ) : recommendationsFrom.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No outgoing recommendations yet.</p>
+              ) : (
+                recommendationsFrom.map((recommendation) => (
+                  <ProfileRecommendationCard key={recommendation.id} recommendation={recommendation} />
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200 bg-white/90 shadow-sm">
+            <CardHeader>
+              <CardTitle>Recommendations to this attestor</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {recommendationsToQuery.isLoading ? (
+                <div className="space-y-2">
+                  {[0, 1].map((row) => (
+                    <Skeleton key={row} className="h-14 w-full" />
+                  ))}
+                </div>
+              ) : recommendationsTo.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No recommendations for this attestor yet.</p>
+              ) : (
+                recommendationsTo.map((recommendation) => (
+                  <ProfileRecommendationCard key={recommendation.id} recommendation={recommendation} />
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </section>
       </main>
     </div>
   );
@@ -241,4 +527,91 @@ function ProfileAttestationCard({
       </div>
     </Link>
   );
+}
+
+function ProfileRequestCard({ request, assertion }: { request: NostrEvent; assertion?: NostrEvent }) {
+  const requestedAttestors = request.tags
+    .filter(([name, value]) => name === 'p' && value)
+    .map(([, value]) => value)
+    .slice(0, 3);
+  const assertionKind = assertion ? formatKind(assertion.kind) : 'Unknown assertion kind';
+
+  return (
+    <div className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <Badge variant="outline">Request</Badge>
+        <span className="text-xs text-muted-foreground">
+          {new Date(request.created_at * 1000).toLocaleString()}
+        </span>
+      </div>
+
+      <p className="mt-2 line-clamp-2 text-sm text-slate-700">
+        {request.content.trim() || 'No request message.'}
+      </p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Badge variant="secondary">{assertionKind}</Badge>
+        {requestedAttestors.map((attestor) => (
+          <a
+            key={attestor}
+            href={getProfilePath(attestor)}
+            className="rounded border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700 hover:bg-slate-50"
+          >
+            {encodeNpub(attestor)}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProfileRecommendationCard({ recommendation }: { recommendation: NostrEvent }) {
+  const parsed = parseAttestorRecommendation(recommendation);
+  const recommender = useAuthor(recommendation.pubkey);
+  const recommenderName = getNostrDisplayName(recommender.data?.metadata, recommendation.pubkey);
+  const recommenderAvatar = recommender.data?.metadata?.picture;
+
+  return (
+    <div className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Avatar className="h-6 w-6 border border-slate-200">
+            <AvatarImage src={recommenderAvatar} alt={recommenderName} />
+            <AvatarFallback className="text-[9px]">{recommenderName.slice(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <a href={getProfilePath(recommendation.pubkey)} className="truncate text-xs font-medium text-slate-800 hover:underline">
+            {recommenderName}
+          </a>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {new Date(recommendation.created_at * 1000).toLocaleString()}
+        </span>
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-2">
+        {parsed.kinds.length > 0 ? (
+          parsed.kinds.map((kind) => (
+            <Badge key={kind} variant="secondary">{formatKind(kind)}</Badge>
+          ))
+        ) : (
+          <p className="text-xs text-muted-foreground">No kind tags.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function groupLatestByPubkeyAndD(events: NostrEvent[]): NostrEvent[] {
+  const byKey = new Map<string, NostrEvent>();
+
+  for (const event of events) {
+    const d = event.tags.find(([name]) => name === 'd')?.[1] ?? event.id;
+    const key = `${event.pubkey}:${d}`;
+    const previous = byKey.get(key);
+    if (!previous || event.created_at > previous.created_at) {
+      byKey.set(key, event);
+    }
+  }
+
+  return [...byKey.values()];
 }

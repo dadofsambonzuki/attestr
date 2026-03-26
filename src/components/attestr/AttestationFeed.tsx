@@ -4,7 +4,6 @@ import type { NostrEvent } from '@nostrify/nostrify';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAttestationFeed, type AttestationFeedFilters } from '@/hooks/useAttestationFeed';
 import { parseAttestation } from '@/lib/attestation';
@@ -118,7 +117,11 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
   };
 
   return (
-    <Card className="border-slate-200 bg-white/90 shadow-sm transition hover:border-slate-300 hover:bg-white">
+    <>
+    <Card
+      className="cursor-pointer border-slate-200 bg-white/90 shadow-sm transition hover:border-slate-300 hover:bg-white"
+      onClick={() => setIsDetailOpen(true)}
+    >
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div className="min-w-0 space-y-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -177,20 +180,22 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
           />
 
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-            <ZapButton target={event} className="text-xs" />
-            <AttestationDetailSheet
-              attestation={event}
-              assertion={assertion}
-              onUpdated={onUpdated}
-              open={isDetailOpen}
-              onDialogOpenChange={setIsDetailOpen}
-              initialSection={initialSection}
-            >
-              <Button variant="outline" size="sm">Open details</Button>
-            </AttestationDetailSheet>
+            <div onClick={(event) => event.stopPropagation()}>
+              <ZapButton target={event} className="text-xs" />
+            </div>
           </div>
         </div>
       </CardContent>
     </Card>
+
+    <AttestationDetailSheet
+      attestation={event}
+      assertion={assertion}
+      onUpdated={onUpdated}
+      open={isDetailOpen}
+      onDialogOpenChange={setIsDetailOpen}
+      initialSection={initialSection}
+    />
+    </>
   );
 }
