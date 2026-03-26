@@ -45,7 +45,7 @@ export function AttestationsWorkspace() {
   return (
     <section className="space-y-6" id="attestations-workspace">
       <AttestrSearchFilters
-        title="Search attestions"
+        title="Search attestations"
         submitLabel="Run search"
         onSubmit={() => setRunKey((k) => k + 1)}
         query={{

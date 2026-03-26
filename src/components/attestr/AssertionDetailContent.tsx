@@ -1,5 +1,8 @@
 import type { NostrEvent } from '@nostrify/nostrify';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useNostr } from '@nostrify/react';
+import { useQuery } from '@tanstack/react-query';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -12,12 +15,15 @@ import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
 import { AttestAssertionDialog } from './AttestAssertionDialog';
 import { RequestAssertionDialog } from './RequestAssertionDialog';
+import { ATTESTATION_KIND, createAssertionTag, parseAttestation } from '@/lib/attestation';
+import { AttestationStatusBadge } from './AttestationStatusBadge';
 
 interface AssertionDetailContentProps {
   assertion: NostrEvent;
 }
 
 export function AssertionDetailContent({ assertion }: AssertionDetailContentProps) {
+  const { nostr } = useNostr();
   const [attestDialogOpen, setAttestDialogOpen] = useState(false);
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const pointer = encodeEventPointer(assertion);
@@ -25,6 +31,33 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
   const author = useAuthor(assertion.pubkey);
   const authorName = getNostrDisplayName(author.data?.metadata, assertion.pubkey);
   const authorAvatar = author.data?.metadata?.picture;
+
+  const associatedAttestationsQuery = useQuery({
+    queryKey: ['nostr', 'assertion-associated-attestations', assertion.id],
+    queryFn: async () => {
+      const [tagName, tagValue] = createAssertionTag(assertion);
+      const filter: Record<string, string[] | number[]> = {
+        kinds: [ATTESTATION_KIND],
+      };
+
+      if (tagName === 'e') {
+        filter['#e'] = [tagValue];
+      } else {
+        filter['#a'] = [tagValue];
+      }
+
+      const events = await nostr.query([
+        {
+          ...filter,
+          limit: 100,
+        },
+      ], { signal: AbortSignal.timeout(6000) });
+
+      return dedupeById(events).sort((a, b) => b.created_at - a.created_at);
+    },
+  });
+
+  const associatedAttestations = associatedAttestationsQuery.data ?? [];
 
   return (
     <div className="mt-2 min-w-0 space-y-6">
@@ -50,6 +83,9 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
           onClick={() => setRequestDialogOpen(true)}
         >
           Request
+        </Button>
+        <Button asChild type="button" variant="outline" size="sm">
+          <Link to={`/${pointer}`}>Permalink</Link>
         </Button>
       </div>
 
@@ -87,6 +123,21 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
         </div>
       </div>
 
+      <div className="space-y-3">
+        <p className="text-sm font-medium">Associated attestations</p>
+        {associatedAttestationsQuery.isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading attestations...</p>
+        ) : associatedAttestations.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No attestations found for this assertion yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {associatedAttestations.map((attestation) => (
+              <AssociatedAttestationRow key={attestation.id} attestation={attestation} />
+            ))}
+          </div>
+        )}
+      </div>
+
       <CommentsSection root={assertion} title="Comments" />
 
       <AttestAssertionDialog
@@ -102,4 +153,45 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
       />
     </div>
   );
+}
+
+function AssociatedAttestationRow({ attestation }: { attestation: NostrEvent }) {
+  const attestor = useAuthor(attestation.pubkey);
+  const attestorName = getNostrDisplayName(attestor.data?.metadata, attestation.pubkey);
+  const attestorAvatar = attestor.data?.metadata?.picture;
+  const parsed = parseAttestation(attestation);
+
+  return (
+    <Link
+      to={`/attestations/${encodeEventPointer(attestation)}`}
+      className="block rounded-md border border-slate-200 bg-slate-50/70 p-3 transition hover:border-slate-300 hover:bg-white"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Avatar className="h-6 w-6 border border-slate-200">
+            <AvatarImage src={attestorAvatar} alt={attestorName} />
+            <AvatarFallback className="text-[9px]">{attestorName.slice(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <p className="truncate text-xs font-medium text-slate-800">{attestorName}</p>
+        </div>
+        <span className="text-xs text-muted-foreground">{new Date(attestation.created_at * 1000).toLocaleString()}</span>
+      </div>
+      <div className="mt-2">
+        <AttestationStatusBadge status={parsed.status} />
+      </div>
+    </Link>
+  );
+}
+
+function dedupeById(events: NostrEvent[]): NostrEvent[] {
+  const seen = new Set<string>();
+  const unique: NostrEvent[] = [];
+
+  for (const event of events) {
+    if (seen.has(event.id)) continue;
+    seen.add(event.id);
+    unique.push(event);
+  }
+
+  return unique;
 }

@@ -30,6 +30,7 @@ import { encodeEventPointer, encodeNpub, getProfilePath } from '@/lib/nostrEncod
 import { normalizeToPubkey } from '@/lib/nostrIdentity';
 import { AttestorRecommendationDialog } from '@/components/attestr/AttestorRecommendationDialog';
 import { ProficiencyDeclarationDialog } from '@/components/attestr/ProficiencyDeclarationDialog';
+import { AssertionDetailDialog } from '@/components/attestr/AssertionDetailDialog';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 interface ClientProfileLink {
@@ -163,15 +164,32 @@ export default function Profile() {
     enabled: !!pubkey,
   });
 
+  const receivedAttestationsQuery = useQuery({
+    queryKey: ['nostr', 'profile-received-attestations', pubkey ?? ''],
+    queryFn: async () => {
+      const events = await nostr.query([
+        {
+          kinds: [ATTESTATION_KIND],
+          limit: 300,
+        },
+      ], { signal: AbortSignal.timeout(6000) });
+
+      return events.sort((a, b) => b.created_at - a.created_at);
+    },
+    enabled: !!pubkey,
+  });
+
   const attestations = useMemo(() => attestationsQuery.data ?? [], [attestationsQuery.data]);
   const requestsFrom = useMemo(() => requestsFromQuery.data ?? [], [requestsFromQuery.data]);
   const requestsTo = useMemo(() => requestsToQuery.data ?? [], [requestsToQuery.data]);
   const recommendationsTo = useMemo(() => recommendationsToQuery.data ?? [], [recommendationsToQuery.data]);
   const recommendationsFrom = useMemo(() => recommendationsFromQuery.data ?? [], [recommendationsFromQuery.data]);
   const proficiency = proficiencyQuery.data;
+  const receivedAttestations = useMemo(() => receivedAttestationsQuery.data ?? [], [receivedAttestationsQuery.data]);
 
   const { data: assertionData } = useAssertionEvents(attestations);
   const { data: requestAssertionData } = useAssertionEvents([...requestsFrom, ...requestsTo]);
+  const { data: receivedAssertionData } = useAssertionEvents(receivedAttestations);
 
   const proficiencyKinds = useMemo(
     () => (proficiency ? parseAttestorProficiencyDeclaration(proficiency).kinds : []),
@@ -192,6 +210,43 @@ export default function Profile() {
 
     return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]);
   }, [recommendationsTo, pubkey]);
+
+  const receivedAssertionGroups = useMemo(() => {
+    const grouped = new Map<string, { assertion: NostrEvent; attestations: NostrEvent[] }>();
+
+    for (const attestation of receivedAttestations) {
+      const parsed = parseAttestation(attestation);
+      if (!parsed.assertionRef) continue;
+
+      const assertion = parsed.assertionRef.type === 'e'
+        ? receivedAssertionData?.byId[parsed.assertionRef.value]
+        : parsed.assertionRef.type === 'a'
+          ? receivedAssertionData?.byAddress[parsed.assertionRef.value]
+          : undefined;
+
+      if (!assertion || assertion.pubkey !== pubkey) continue;
+
+      const key = `${parsed.assertionRef.type}:${parsed.assertionRef.value}`;
+      const bucket = grouped.get(key);
+      if (!bucket) {
+        grouped.set(key, { assertion, attestations: [attestation] });
+      } else {
+        bucket.attestations.push(attestation);
+      }
+    }
+
+    return [...grouped.values()]
+      .map((group) => {
+        const uniqueAttestors = [...new Set(group.attestations.map((event) => event.pubkey))];
+        const latestAttestationAt = Math.max(...group.attestations.map((event) => event.created_at));
+        return {
+          ...group,
+          uniqueAttestors,
+          latestAttestationAt,
+        };
+      })
+      .sort((a, b) => b.latestAttestationAt - a.latestAttestationAt);
+  }, [receivedAttestations, receivedAssertionData, pubkey]);
 
   useSeoMeta({
     title: pubkey ? 'Profile • Attestr' : 'Profile not found • Attestr',
@@ -322,43 +377,71 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 bg-white/90 shadow-sm">
-          <CardHeader>
-            <CardTitle>Attestations by this user</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {attestationsQuery.isLoading ? (
-              <div className="space-y-2">
-                {[0, 1, 2].map((row) => (
-                  <Skeleton key={row} className="h-14 w-full" />
-                ))}
-              </div>
-            ) : attestations.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No attestations found for this profile yet.</p>
-            ) : (
-              attestations.map((attestation) => {
-                const parsed = parseAttestation(attestation);
-                const pointer = encodeEventPointer(attestation);
-                const assertion = parsed.assertionRef
-                  ? parsed.assertionRef.type === 'e'
-                    ? assertionData?.byId[parsed.assertionRef.value]
-                    : parsed.assertionRef.type === 'a'
-                      ? assertionData?.byAddress[parsed.assertionRef.value]
-                      : undefined
-                  : undefined;
+        <section className="grid gap-6 md:grid-cols-2">
+          <Card className="border-slate-200 bg-white/90 shadow-sm">
+            <CardHeader>
+              <CardTitle>Attestations by this user</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {attestationsQuery.isLoading ? (
+                <div className="space-y-2">
+                  {[0, 1, 2].map((row) => (
+                    <Skeleton key={row} className="h-14 w-full" />
+                  ))}
+                </div>
+              ) : attestations.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No attestations found for this profile yet.</p>
+              ) : (
+                attestations.map((attestation) => {
+                  const parsed = parseAttestation(attestation);
+                  const pointer = encodeEventPointer(attestation);
+                  const assertion = parsed.assertionRef
+                    ? parsed.assertionRef.type === 'e'
+                      ? assertionData?.byId[parsed.assertionRef.value]
+                      : parsed.assertionRef.type === 'a'
+                        ? assertionData?.byAddress[parsed.assertionRef.value]
+                        : undefined
+                    : undefined;
 
-                return (
-                  <ProfileAttestationCard
-                    key={attestation.id}
-                    attestation={attestation}
-                    assertion={assertion}
-                    to={`/attestations/${pointer}`}
+                  return (
+                    <ProfileAttestationCard
+                      key={attestation.id}
+                      attestation={attestation}
+                      assertion={assertion}
+                      to={`/attestations/${pointer}`}
+                    />
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200 bg-white/90 shadow-sm">
+            <CardHeader>
+              <CardTitle>Received attestations on authored assertions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {receivedAttestationsQuery.isLoading ? (
+                <div className="space-y-2">
+                  {[0, 1, 2].map((row) => (
+                    <Skeleton key={row} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : receivedAssertionGroups.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No received attestations found for authored assertions yet.</p>
+              ) : (
+                receivedAssertionGroups.map((group) => (
+                  <ReceivedAssertionSummaryCard
+                    key={group.assertion.id}
+                    assertion={group.assertion}
+                    attestationCount={group.attestations.length}
+                    attestorPubkeys={group.uniqueAttestors}
                   />
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </section>
 
         <section className="grid gap-6 md:grid-cols-2">
           <Card className="border-slate-200 bg-white/90 shadow-sm">
@@ -598,6 +681,70 @@ function ProfileRecommendationCard({ recommendation }: { recommendation: NostrEv
         )}
       </div>
     </div>
+  );
+}
+
+function ReceivedAssertionSummaryCard({
+  assertion,
+  attestationCount,
+  attestorPubkeys,
+}: {
+  assertion: NostrEvent;
+  attestationCount: number;
+  attestorPubkeys: string[];
+}) {
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  return (
+    <>
+      <div
+        className="cursor-pointer rounded-md border border-slate-200 bg-slate-50/70 p-3 transition hover:border-slate-300 hover:bg-white"
+        onClick={() => setIsDetailOpen(true)}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <Badge variant="secondary">{formatKind(assertion.kind)}</Badge>
+          <span className="text-xs text-muted-foreground">{attestationCount} attestations</span>
+        </div>
+
+        <p className="mt-2 line-clamp-2 text-sm text-slate-700">
+          {assertion.content.trim() || 'No assertion content.'}
+        </p>
+
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Attested by</span>
+          <div className="flex items-center">
+            {attestorPubkeys.slice(0, 6).map((pubkey, idx) => (
+              <ReceivedAttestorAvatar key={pubkey} pubkey={pubkey} overlapIndex={idx} />
+            ))}
+            {attestorPubkeys.length > 6 ? (
+              <span className="ml-2 text-xs text-muted-foreground">+{attestorPubkeys.length - 6}</span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <AssertionDetailDialog
+        assertion={assertion}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+      />
+    </>
+  );
+}
+
+function ReceivedAttestorAvatar({ pubkey, overlapIndex }: { pubkey: string; overlapIndex: number }) {
+  const author = useAuthor(pubkey);
+  const name = getNostrDisplayName(author.data?.metadata, pubkey);
+  const avatar = author.data?.metadata?.picture;
+
+  return (
+    <Avatar
+      className="h-6 w-6 border border-white"
+      style={{ marginLeft: overlapIndex === 0 ? 0 : -8 }}
+    >
+      <AvatarImage src={avatar} alt={name} />
+      <AvatarFallback className="text-[9px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+    </Avatar>
   );
 }
 

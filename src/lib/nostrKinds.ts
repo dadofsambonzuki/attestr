@@ -101,6 +101,7 @@ const KIND_NAME_BY_NUMBER: Record<number, string> = {
   34235: 'Addressable Video Event',
   34236: 'Addressable Short Video Event',
   34550: 'Community Definition',
+  37515: 'Places',
   38172: 'Cashu Mint Announcement',
   38173: 'Fedimint Announcement',
   39089: 'Starter Packs',
