@@ -19,7 +19,7 @@ Using both enables:
 
 ## Kind Definitions
 
-### `31873` - Trusted Attestor (addressable) - previusly Attestor Recommendation
+### `31873` - Trusted Attestor (addressable) - previously Attestor Recommendation
 
 Purpose: "I recommend this attestor for these assertion kinds."
 
