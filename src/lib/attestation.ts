@@ -165,6 +165,11 @@ export function createAttestationRequestD(requestorPubkey: string, assertionEven
   return `${requestorPubkey.slice(0, 8)}:${assertionEvent.id.slice(0, 12)}:${now}`;
 }
 
+export function createAttestorRecommendationD(recommenderPubkey: string, recommendedAttestorPubkey: string): string {
+  const now = Math.floor(Date.now() / 1000);
+  return `${recommenderPubkey.slice(0, 8)}:${recommendedAttestorPubkey.slice(0, 8)}:${now}`;
+}
+
 export function toUnixTimestamp(dateTimeLocal: string): number | undefined {
   if (!dateTimeLocal) return undefined;
   const ms = Date.parse(dateTimeLocal);

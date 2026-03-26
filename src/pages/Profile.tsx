@@ -31,6 +31,7 @@ import { normalizeToPubkey } from '@/lib/nostrIdentity';
 import { AttestorRecommendationDialog } from '@/components/attestr/AttestorRecommendationDialog';
 import { ProficiencyDeclarationDialog } from '@/components/attestr/ProficiencyDeclarationDialog';
 import { AssertionDetailDialog } from '@/components/attestr/AssertionDetailDialog';
+import { AttestationRequestDetailDialog } from '@/components/attestr/AttestationRequestDetailDialog';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 interface ClientProfileLink {
@@ -613,6 +614,7 @@ function ProfileAttestationCard({
 }
 
 function ProfileRequestCard({ request, assertion }: { request: NostrEvent; assertion?: NostrEvent }) {
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const requestedAttestors = request.tags
     .filter(([name, value]) => name === 'p' && value)
     .map(([, value]) => value)
@@ -620,31 +622,50 @@ function ProfileRequestCard({ request, assertion }: { request: NostrEvent; asser
   const assertionKind = assertion ? formatKind(assertion.kind) : 'Unknown assertion kind';
 
   return (
-    <div className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
-      <div className="flex items-center justify-between gap-2">
-        <Badge variant="outline">Request</Badge>
-        <span className="text-xs text-muted-foreground">
-          {new Date(request.created_at * 1000).toLocaleString()}
-        </span>
+    <>
+      <div
+        className="cursor-pointer rounded-md border border-slate-200 bg-slate-50/70 p-3 transition hover:border-slate-300 hover:bg-white"
+        onClick={() => setIsDetailOpen(true)}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <Badge variant="outline">Request</Badge>
+          <span className="text-xs text-muted-foreground">
+            {new Date(request.created_at * 1000).toLocaleString()}
+          </span>
+        </div>
+
+        <p className="mt-2 line-clamp-2 text-sm text-slate-700">
+          {request.content.trim() || 'No request message.'}
+        </p>
+
+        <div className="mt-2 rounded-md border border-slate-200 bg-white/90 p-2">
+          <p className="line-clamp-1 text-[11px] text-slate-600">
+            {assertion?.content.trim() || 'Assertion content unavailable.'}
+          </p>
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{assertionKind}</Badge>
+          {requestedAttestors.map((attestor) => (
+            <a
+              key={attestor}
+              href={getProfilePath(attestor)}
+              onClick={(event) => event.stopPropagation()}
+              className="rounded border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700 hover:bg-slate-50"
+            >
+              {encodeNpub(attestor)}
+            </a>
+          ))}
+        </div>
       </div>
 
-      <p className="mt-2 line-clamp-2 text-sm text-slate-700">
-        {request.content.trim() || 'No request message.'}
-      </p>
-
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Badge variant="secondary">{assertionKind}</Badge>
-        {requestedAttestors.map((attestor) => (
-          <a
-            key={attestor}
-            href={getProfilePath(attestor)}
-            className="rounded border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700 hover:bg-slate-50"
-          >
-            {encodeNpub(attestor)}
-          </a>
-        ))}
-      </div>
-    </div>
+      <AttestationRequestDetailDialog
+        request={request}
+        assertion={assertion}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+      />
+    </>
   );
 }
 

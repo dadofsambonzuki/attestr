@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 
 import { AppHeader } from '@/components/AppHeader';
 import { AssertionSearchPanel } from '@/components/attestr/AssertionSearchPanel';
+import { AttestationRequestDetailDialog } from '@/components/attestr/AttestationRequestDetailDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -190,53 +191,66 @@ function MarketplaceRequestCard({
   assertionKind?: number;
   highlighted: boolean;
 }) {
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const requestedAttestors = request.tags
     .filter(([name, value]) => name === 'p' && value)
     .map(([, value]) => value)
     .slice(0, 4);
 
   return (
-    <div
-      className={[
-        'rounded-md border p-3',
-        highlighted
-          ? 'border-emerald-300 bg-emerald-50/70'
-          : 'border-slate-200 bg-slate-50/70',
-      ].join(' ')}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={highlighted ? 'default' : 'outline'}>
-            {highlighted ? 'Matches your proficiency' : 'Request'}
-          </Badge>
-          <Badge variant="secondary">
-            {typeof assertionKind === 'number' ? formatKind(assertionKind) : 'Unknown assertion kind'}
-          </Badge>
+    <>
+      <div
+        className={[
+          'cursor-pointer rounded-md border p-3 transition hover:border-slate-300 hover:bg-white',
+          highlighted
+            ? 'border-emerald-300 bg-emerald-50/70'
+            : 'border-slate-200 bg-slate-50/70',
+        ].join(' ')}
+        onClick={() => setIsDetailOpen(true)}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={highlighted ? 'default' : 'outline'}>
+              {highlighted ? 'Matches your proficiency' : 'Request'}
+            </Badge>
+            <Badge variant="secondary">
+              {typeof assertionKind === 'number' ? formatKind(assertionKind) : 'Unknown assertion kind'}
+            </Badge>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {new Date(request.created_at * 1000).toLocaleString()}
+          </span>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {new Date(request.created_at * 1000).toLocaleString()}
-        </span>
+
+        <p className="mt-2 line-clamp-2 text-sm text-slate-700">
+          {request.content.trim() || 'No request message.'}
+        </p>
+
+        <div className="mt-2 rounded-md border border-slate-200 bg-white/90 p-2">
+          <p className="line-clamp-1 text-[11px] text-slate-600">
+            {assertion?.content.trim() || 'Assertion content unavailable.'}
+          </p>
+        </div>
+
+        {requestedAttestors.length > 0 ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Requested attestors</span>
+            {requestedAttestors.map((attestor) => (
+              <Badge key={attestor} variant="outline" className="max-w-[240px] truncate">
+                {attestor}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
       </div>
 
-      <p className="mt-2 line-clamp-2 text-sm text-slate-700">
-        {request.content.trim() || 'No request message.'}
-      </p>
-
-      <p className="mt-2 line-clamp-2 text-xs text-slate-600">
-        {assertion?.content.trim() || 'Assertion content unavailable.'}
-      </p>
-
-      {requestedAttestors.length > 0 ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Requested attestors</span>
-          {requestedAttestors.map((attestor) => (
-            <Badge key={attestor} variant="outline" className="max-w-[240px] truncate">
-              {attestor}
-            </Badge>
-          ))}
-        </div>
-      ) : null}
-    </div>
+      <AttestationRequestDetailDialog
+        request={request}
+        assertion={assertion}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+      />
+    </>
   );
 }
 

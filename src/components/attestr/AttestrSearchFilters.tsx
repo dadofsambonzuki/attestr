@@ -1,4 +1,5 @@
 import { Search, X } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ interface MultiTextFilterConfig {
   onRemove: (value: string) => void;
   placeholder?: string;
   pillLabel: (value: string) => string;
+  customInput?: ReactNode;
 }
 
 interface SelectFilterConfig {
@@ -128,15 +130,24 @@ export function AttestrSearchFilters({
           {author ? (
             <div className="space-y-2">
               <Label htmlFor={author.id}>{author.label}</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id={author.id}
-                  value={author.inputValue}
-                  onChange={(e) => author.onInputChange(e.target.value)}
-                  placeholder={author.placeholder}
-                />
-                <Button type="button" variant="outline" onClick={author.onAdd}>Add</Button>
-              </div>
+              {author.customInput ? (
+                <div className="space-y-2">
+                  {author.customInput}
+                  <div className="flex justify-end">
+                    <Button type="button" variant="outline" onClick={author.onAdd}>Add</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Input
+                    id={author.id}
+                    value={author.inputValue}
+                    onChange={(e) => author.onInputChange(e.target.value)}
+                    placeholder={author.placeholder}
+                  />
+                  <Button type="button" variant="outline" onClick={author.onAdd}>Add</Button>
+                </div>
+              )}
             </div>
           ) : null}
 

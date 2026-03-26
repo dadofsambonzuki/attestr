@@ -2,13 +2,11 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
-import { ATTESTOR_RECOMMENDATION_KIND } from '@/lib/attestation';
+import { ATTESTOR_RECOMMENDATION_KIND, createAttestorRecommendationD } from '@/lib/attestation';
 import { KindTagSelector } from './KindTagSelector';
 
 interface AttestorRecommendationFormProps {
@@ -26,18 +24,17 @@ export function AttestorRecommendationForm({
   const { mutateAsync: publishEvent, isPending } = useNostrPublish();
   const { toast } = useToast();
 
-  const [recommendationId, setRecommendationId] = useState('');
   const [kindPickerValue, setKindPickerValue] = useState<string>('any');
   const [selectedKinds, setSelectedKinds] = useState<number[]>([]);
 
-  const canSubmit = Boolean(user && selectedKinds.length > 0 && recommendationId.trim().length > 0);
+  const canSubmit = Boolean(user && selectedKinds.length > 0);
 
   const handlePublish = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || !user) return;
 
-    const trimmedId = recommendationId.trim();
+    const d = createAttestorRecommendationD(user.pubkey, recommendedAttestorPubkey);
     const tags: string[][] = [
-      ['d', `${recommendedAttestorPubkey}${trimmedId}`],
+      ['d', d],
       ['p', recommendedAttestorPubkey],
       ...selectedKinds.map((kind) => ['k', String(kind)]),
     ];
@@ -53,7 +50,6 @@ export function AttestorRecommendationForm({
         title: 'Recommendation published',
         description: 'Your attestor recommendation is now on relays.',
       });
-      setRecommendationId('');
       setSelectedKinds([]);
       onPublished?.();
     } catch (error) {
@@ -73,16 +69,6 @@ export function AttestorRecommendationForm({
           <LoginArea />
         </div>
       ) : null}
-
-      <div className="space-y-2">
-        <Label htmlFor="recommendation-id">Recommendation identifier</Label>
-        <Input
-          id="recommendation-id"
-          value={recommendationId}
-          onChange={(e) => setRecommendationId(e.target.value)}
-          placeholder="e.g. work-history-2026"
-        />
-      </div>
 
       <KindTagSelector
         id="recommendation-kinds"

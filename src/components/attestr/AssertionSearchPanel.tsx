@@ -15,6 +15,7 @@ import { AssertionDetailDialog } from './AssertionDetailDialog';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
 import { AttestrSearchFilters } from './AttestrSearchFilters';
 import { formatKind, getKindName, getNostrKindOptions } from '@/lib/nostrKinds';
+import { ProfileLookupInput } from './ProfileLookupInput';
 
 interface AssertionSearchPanelProps {
   onSelect?: (event: NostrEvent) => void;
@@ -102,6 +103,18 @@ export function AssertionSearchPanel({
           onRemove: (value) => setSelectedAuthors((prev) => prev.filter((item) => item !== value)),
           placeholder: 'nip05 / npub / hex',
           pillLabel: (value) => `Author: ${value}`,
+          customInput: (
+            <ProfileLookupInput
+              id="search-author"
+              value={authorInput}
+              onValueChange={setAuthorInput}
+              placeholder="username, nip05, npub, or hex"
+              onSelectPubkey={(pubkey) => {
+                setSelectedAuthors((prev) => (prev.includes(pubkey) ? prev : [...prev, pubkey]));
+                setAuthorInput('');
+              }}
+            />
+          ),
         }}
         kind={{
           id: 'search-kind',

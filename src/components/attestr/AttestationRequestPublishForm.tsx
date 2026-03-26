@@ -3,10 +3,10 @@ import type { NostrEvent } from '@nostrify/nostrify';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { LoginArea } from '@/components/auth/LoginArea';
+import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
@@ -16,6 +16,9 @@ import {
   createAttestationRequestD,
 } from '@/lib/attestation';
 import { encodeNpub } from '@/lib/nostrEncodings';
+import { resolveAuthorInput } from '@/lib/nostrIdentity';
+import { ProfileLookupInput } from './ProfileLookupInput';
+import { getNostrDisplayName } from '@/lib/nostrDisplay';
 
 interface AttestationRequestPublishFormProps {
   assertionEvent?: NostrEvent;
@@ -32,7 +35,6 @@ export function AttestationRequestPublishForm({
   const { mutateAsync: publishEvent, isPending } = useNostrPublish();
   const { toast } = useToast();
 
-  const [requestId, setRequestId] = useState('');
   const [requestMessage, setRequestMessage] = useState('');
   const [attestorInput, setAttestorInput] = useState('');
   const [requestedAttestors, setRequestedAttestors] = useState<string[]>([]);
@@ -50,9 +52,7 @@ export function AttestationRequestPublishForm({
       return;
     }
 
-    const d = requestId.trim().length > 0
-      ? `${user.pubkey}${requestId.trim()}`
-      : createAttestationRequestD(user.pubkey, assertionEvent);
+    const d = createAttestationRequestD(user.pubkey, assertionEvent);
 
     const tags: string[][] = [
       ['d', d],
@@ -67,7 +67,6 @@ export function AttestationRequestPublishForm({
         content: requestMessage.trim(),
       });
 
-      setRequestId('');
       setRequestMessage('');
       setAttestorInput('');
       setRequestedAttestors([]);
@@ -101,31 +100,34 @@ export function AttestationRequestPublishForm({
       ) : null}
 
       <div className="space-y-2">
-        <Label htmlFor="request-id">Request identifier (optional)</Label>
-        <Input
-          id="request-id"
-          value={requestId}
-          onChange={(e) => setRequestId(e.target.value)}
-          placeholder="e.g. id-check-q2-2026"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="request-attestor">Requested attestor pubkey (optional)</Label>
-        <div className="flex items-center gap-2">
-          <Input
+        <Label htmlFor="request-attestor">Requested attestor (optional)</Label>
+        <div className="space-y-2">
+          <ProfileLookupInput
             id="request-attestor"
             value={attestorInput}
-            onChange={(e) => setAttestorInput(e.target.value)}
-            placeholder="hex pubkey"
+            onValueChange={setAttestorInput}
+            placeholder="username, nip05, npub, or hex"
+            onSelectPubkey={(pubkey) => {
+              setRequestedAttestors((prev) => (prev.includes(pubkey) ? prev : [...prev, pubkey]));
+              setAttestorInput('');
+            }}
           />
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
+            onClick={async () => {
               const value = attestorInput.trim();
               if (!value) return;
-              setRequestedAttestors((prev) => (prev.includes(value) ? prev : [...prev, value]));
+              const resolved = await resolveAuthorInput(value);
+              if (!resolved) {
+                toast({
+                  title: 'Invalid attestor identifier',
+                  description: 'Enter a valid username, nip05, npub, or hex pubkey.',
+                  variant: 'destructive',
+                });
+                return;
+              }
+              setRequestedAttestors((prev) => (prev.includes(resolved) ? prev : [...prev, resolved]));
               setAttestorInput('');
             }}
           >
@@ -137,16 +139,11 @@ export function AttestationRequestPublishForm({
       {requestedAttestors.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {requestedAttestors.map((attestor) => (
-            <Button
+            <RequestedAttestorPill
               key={attestor}
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setRequestedAttestors((prev) => prev.filter((item) => item !== attestor))}
-              className="font-mono text-[11px]"
-            >
-              {encodeNpub(attestor)} ×
-            </Button>
+              pubkey={attestor}
+              onRemove={() => setRequestedAttestors((prev) => prev.filter((item) => item !== attestor))}
+            />
           ))}
         </div>
       ) : null}
@@ -171,4 +168,21 @@ export function AttestationRequestPublishForm({
 
   if (embedded) return formBody;
   return <div className="space-y-5">{formBody}</div>;
+}
+
+function RequestedAttestorPill({ pubkey, onRemove }: { pubkey: string; onRemove: () => void }) {
+  const author = useAuthor(pubkey);
+  const displayName = getNostrDisplayName(author.data?.metadata, pubkey);
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={onRemove}
+      className="text-[11px]"
+    >
+      {displayName} ×
+    </Button>
+  );
 }
