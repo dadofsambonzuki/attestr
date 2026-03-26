@@ -6,11 +6,13 @@ import { useMemo, useState } from 'react';
 import { AppHeader } from '@/components/AppHeader';
 import { AssertionSearchPanel } from '@/components/attestr/AssertionSearchPanel';
 import { AttestationRequestDetailDialog } from '@/components/attestr/AttestationRequestDetailDialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuthor } from '@/hooks/useAuthor';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
@@ -19,7 +21,9 @@ import {
   parseAttestationRequest,
   parseAttestorProficiencyDeclaration,
 } from '@/lib/attestation';
+import { getProfilePath } from '@/lib/nostrEncodings';
 import { formatKind } from '@/lib/nostrKinds';
+import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 export default function Marketplace() {
@@ -192,6 +196,10 @@ function MarketplaceRequestCard({
   highlighted: boolean;
 }) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const requester = useAuthor(request.pubkey);
+  const requesterName = getNostrDisplayName(requester.data?.metadata, request.pubkey);
+  const requesterAvatar = requester.data?.metadata?.picture;
+
   const requestedAttestors = request.tags
     .filter(([name, value]) => name === 'p' && value)
     .map(([, value]) => value)
@@ -222,6 +230,23 @@ function MarketplaceRequestCard({
           </span>
         </div>
 
+        <div className="mt-2 rounded-md border border-slate-200 bg-white/90 p-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Avatar className="h-6 w-6 border border-slate-200">
+              <AvatarImage src={requesterAvatar} alt={requesterName} />
+              <AvatarFallback className="text-[9px]">{requesterName.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <a
+              href={getProfilePath(request.pubkey)}
+              onClick={(event) => event.stopPropagation()}
+              className="truncate text-xs font-medium text-slate-800 hover:underline"
+            >
+              {requesterName}
+            </a>
+            <span className="text-[11px] text-muted-foreground">requested this attestation</span>
+          </div>
+        </div>
+
         <p className="mt-2 line-clamp-2 text-sm text-slate-700">
           {request.content.trim() || 'No request message.'}
         </p>
@@ -236,9 +261,11 @@ function MarketplaceRequestCard({
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">Requested attestors</span>
             {requestedAttestors.map((attestor) => (
-              <Badge key={attestor} variant="outline" className="max-w-[240px] truncate">
-                {attestor}
-              </Badge>
+              <RequestedAttestorPill
+                key={attestor}
+                pubkey={attestor}
+                onCardClickStop
+              />
             ))}
           </div>
         ) : null}
@@ -251,6 +278,28 @@ function MarketplaceRequestCard({
         onOpenChange={setIsDetailOpen}
       />
     </>
+  );
+}
+
+function RequestedAttestorPill({ pubkey, onCardClickStop = false }: { pubkey: string; onCardClickStop?: boolean }) {
+  const author = useAuthor(pubkey);
+  const displayName = getNostrDisplayName(author.data?.metadata, pubkey);
+  const avatar = author.data?.metadata?.picture;
+
+  return (
+    <a
+      href={getProfilePath(pubkey)}
+      onClick={(event) => {
+        if (onCardClickStop) event.stopPropagation();
+      }}
+      className="inline-flex max-w-[240px] items-center gap-1.5 rounded border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
+    >
+      <Avatar className="h-4 w-4 border border-slate-200">
+        <AvatarImage src={avatar} alt={displayName} />
+        <AvatarFallback className="text-[8px]">{displayName.slice(0, 2).toUpperCase()}</AvatarFallback>
+      </Avatar>
+      <span className="truncate">{displayName}</span>
+    </a>
   );
 }
 

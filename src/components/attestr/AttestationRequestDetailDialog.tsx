@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthor } from '@/hooks/useAuthor';
-import { encodeEventPointer, encodeNpub, getProfilePath } from '@/lib/nostrEncodings';
+import { encodeEventPointer, getProfilePath } from '@/lib/nostrEncodings';
 import { formatKind } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
@@ -82,20 +82,13 @@ export function AttestationRequestDetailDialog({
               <Button asChild variant="outline" size="sm">
                 <Link to={`/${requestPointer}`}>Permalink</Link>
               </Button>
-              <Badge variant="secondary" className="font-mono text-[10px]">{encodeNpub(request.pubkey)}</Badge>
             </div>
 
             {requestedAttestors.length > 0 ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="text-xs text-muted-foreground">Requested attestors</span>
                 {requestedAttestors.map((pubkey) => (
-                  <a
-                    key={pubkey}
-                    href={getProfilePath(pubkey)}
-                    className="rounded border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700 hover:bg-slate-50"
-                  >
-                    {encodeNpub(pubkey)}
-                  </a>
+                  <RequestedAttestorIdentityPill key={pubkey} pubkey={pubkey} />
                 ))}
               </div>
             ) : null}
@@ -129,5 +122,24 @@ export function AttestationRequestDetailDialog({
         />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function RequestedAttestorIdentityPill({ pubkey }: { pubkey: string }) {
+  const author = useAuthor(pubkey);
+  const displayName = getNostrDisplayName(author.data?.metadata, pubkey);
+  const avatar = author.data?.metadata?.picture;
+
+  return (
+    <a
+      href={getProfilePath(pubkey)}
+      className="inline-flex max-w-[240px] items-center gap-1.5 rounded border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
+    >
+      <Avatar className="h-4 w-4 border border-slate-200">
+        <AvatarImage src={avatar} alt={displayName} />
+        <AvatarFallback className="text-[8px]">{displayName.slice(0, 2).toUpperCase()}</AvatarFallback>
+      </Avatar>
+      <span className="truncate">{displayName}</span>
+    </a>
   );
 }
