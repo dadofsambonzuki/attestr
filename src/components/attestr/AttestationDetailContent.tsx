@@ -21,6 +21,7 @@ import { AssertionPreview } from './AssertionPreview';
 import { AttestationZapStats } from './AttestationZapStats';
 import { ATTESTATION_STATUS_DESCRIPTIONS } from '@/lib/attestation';
 import { AttestationStatusLabel } from './AttestationStatusBadge';
+import { EventDeletionRequestButton } from './EventDeletionRequestButton';
 
 interface AttestationDetailContentProps {
   attestation: NostrEvent;
@@ -139,6 +140,7 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
 
       <div className="flex flex-wrap gap-2">
         <Badge variant="outline">{formatKind(attestation.kind)}</Badge>
+        <EventDeletionRequestButton event={attestation} onRequested={onUpdated} />
       </div>
 
       <div className="grid gap-3 rounded-md border p-4">

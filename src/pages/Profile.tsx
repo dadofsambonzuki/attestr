@@ -32,6 +32,7 @@ import { AttestorRecommendationDialog } from '@/components/attestr/AttestorRecom
 import { ProficiencyDeclarationDialog } from '@/components/attestr/ProficiencyDeclarationDialog';
 import { AssertionDetailDialog } from '@/components/attestr/AssertionDetailDialog';
 import { AttestationRequestDetailDialog } from '@/components/attestr/AttestationRequestDetailDialog';
+import { AttestorRecommendationDetailDialog } from '@/components/attestr/AttestorRecommendationDetailDialog';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 interface ClientProfileLink {
@@ -526,7 +527,14 @@ export default function Profile() {
                 <p className="text-sm text-muted-foreground">No outgoing recommendations yet.</p>
               ) : (
                 recommendationsFrom.map((recommendation) => (
-                  <ProfileRecommendationCard key={recommendation.id} recommendation={recommendation} />
+                  <ProfileRecommendationCard
+                    key={recommendation.id}
+                    recommendation={recommendation}
+                    onUpdated={() => {
+                      void recommendationsFromQuery.refetch();
+                      void recommendationsToQuery.refetch();
+                    }}
+                  />
                 ))
               )}
             </CardContent>
@@ -547,7 +555,14 @@ export default function Profile() {
                 <p className="text-sm text-muted-foreground">No recommendations for this attestor yet.</p>
               ) : (
                 recommendationsTo.map((recommendation) => (
-                  <ProfileRecommendationCard key={recommendation.id} recommendation={recommendation} />
+                  <ProfileRecommendationCard
+                    key={recommendation.id}
+                    recommendation={recommendation}
+                    onUpdated={() => {
+                      void recommendationsFromQuery.refetch();
+                      void recommendationsToQuery.refetch();
+                    }}
+                  />
                 ))
               )}
             </CardContent>
@@ -669,39 +684,52 @@ function ProfileRequestCard({ request, assertion }: { request: NostrEvent; asser
   );
 }
 
-function ProfileRecommendationCard({ recommendation }: { recommendation: NostrEvent }) {
+function ProfileRecommendationCard({ recommendation, onUpdated }: { recommendation: NostrEvent; onUpdated?: () => void }) {
   const parsed = parseAttestorRecommendation(recommendation);
   const recommender = useAuthor(recommendation.pubkey);
   const recommenderName = getNostrDisplayName(recommender.data?.metadata, recommendation.pubkey);
   const recommenderAvatar = recommender.data?.metadata?.picture;
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   return (
-    <div className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <Avatar className="h-6 w-6 border border-slate-200">
-            <AvatarImage src={recommenderAvatar} alt={recommenderName} />
-            <AvatarFallback className="text-[9px]">{recommenderName.slice(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <a href={getProfilePath(recommendation.pubkey)} className="truncate text-xs font-medium text-slate-800 hover:underline">
-            {recommenderName}
-          </a>
+    <>
+      <div
+        className="cursor-pointer rounded-md border border-slate-200 bg-slate-50/70 p-3 transition hover:border-slate-300 hover:bg-white"
+        onClick={() => setIsDetailOpen(true)}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Avatar className="h-6 w-6 border border-slate-200">
+              <AvatarImage src={recommenderAvatar} alt={recommenderName} />
+              <AvatarFallback className="text-[9px]">{recommenderName.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <a href={getProfilePath(recommendation.pubkey)} className="truncate text-xs font-medium text-slate-800 hover:underline">
+              {recommenderName}
+            </a>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {new Date(recommendation.created_at * 1000).toLocaleString()}
+          </span>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {new Date(recommendation.created_at * 1000).toLocaleString()}
-        </span>
+
+        <div className="mt-2 flex flex-wrap gap-2">
+          {parsed.kinds.length > 0 ? (
+            parsed.kinds.map((kind) => (
+              <Badge key={kind} variant="secondary">{formatKind(kind)}</Badge>
+            ))
+          ) : (
+            <p className="text-xs text-muted-foreground">No kind tags.</p>
+          )}
+        </div>
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-2">
-        {parsed.kinds.length > 0 ? (
-          parsed.kinds.map((kind) => (
-            <Badge key={kind} variant="secondary">{formatKind(kind)}</Badge>
-          ))
-        ) : (
-          <p className="text-xs text-muted-foreground">No kind tags.</p>
-        )}
-      </div>
-    </div>
+      <AttestorRecommendationDetailDialog
+        recommendation={recommendation}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        onUpdated={onUpdated}
+      />
+    </>
   );
 }
 

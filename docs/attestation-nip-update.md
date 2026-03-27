@@ -19,13 +19,13 @@ Using both enables:
 
 ## Kind Definitions
 
-### `31873` - Trusted Attestor (addressable) - previously Attestor Recommendation
+### `31873` - Trusted Attestor (singular edge, addressable)
 
-Purpose: "I recommend this attestor for these assertion kinds."
+Purpose: "I trust this attestor for these assertion kinds."
 
 Required tag shape:
 
-- exactly one `p` tag (recommended attestor)
+- exactly one `p` tag (trusted attestor)
 - one or more `k` tags (assertion kinds)
 
 Recommended tag shape:
@@ -47,7 +47,7 @@ Example:
 }
 ```
 
-### `31874` - Trusted Attestors (addressable)
+### `31874` - Trusted Attestors (set, addressable)
 
 Purpose: "For assertion kind K, these are my trusted attestors."
 
@@ -82,7 +82,16 @@ Recommended trust resolution precedence:
 
 1. Explicit `31874` policy (manual user-curated list)
 2. Auto-generated `31874` policy (from trusted recommendation sources)
-3. Raw `31873` recommendations only when no `31874` is present
+3. Raw `31873` trusted-attestor edges only when no `31874` is present
+
+## Proficiency Model
+
+Attestor proficiency can be represented by self-referential trusted-attestor edges:
+
+- `author == p` on trusted-attestor records means self-claim/proficiency.
+- `author != p` means third-party trust signal.
+
+This allows `11871` proficiency declarations to be folded into the trusted-attestor model.
 
 ## Query and Security Notes
 

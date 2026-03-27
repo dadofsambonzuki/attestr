@@ -17,6 +17,7 @@ import { AttestAssertionDialog } from './AttestAssertionDialog';
 import { RequestAssertionDialog } from './RequestAssertionDialog';
 import { ATTESTATION_KIND, createAssertionTag, parseAttestation } from '@/lib/attestation';
 import { AttestationStatusBadge } from './AttestationStatusBadge';
+import { EventDeletionRequestButton } from './EventDeletionRequestButton';
 
 interface AssertionDetailContentProps {
   assertion: NostrEvent;
@@ -87,6 +88,7 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
         <Button asChild type="button" variant="outline" size="sm">
           <Link to={`/${pointer}`}>Permalink</Link>
         </Button>
+        <EventDeletionRequestButton event={assertion} />
       </div>
 
       <div className="grid min-w-0 gap-3 rounded-md border p-4">

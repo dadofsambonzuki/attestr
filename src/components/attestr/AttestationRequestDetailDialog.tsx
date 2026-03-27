@@ -20,6 +20,7 @@ import { formatKind } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
 import { AttestAssertionDialog } from './AttestAssertionDialog';
+import { EventDeletionRequestButton } from './EventDeletionRequestButton';
 
 interface AttestationRequestDetailDialogProps {
   request: NostrEvent;
@@ -82,6 +83,7 @@ export function AttestationRequestDetailDialog({
               <Button asChild variant="outline" size="sm">
                 <Link to={`/${requestPointer}`}>Permalink</Link>
               </Button>
+              <EventDeletionRequestButton event={request} />
             </div>
 
             {requestedAttestors.length > 0 ? (
