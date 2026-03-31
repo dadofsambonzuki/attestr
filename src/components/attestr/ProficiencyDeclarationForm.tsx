@@ -12,6 +12,7 @@ import {
   parseAttestorProficiencyDeclaration,
 } from '@/lib/attestation';
 import { KindTagSelector } from './KindTagSelector';
+import { SignerMismatchWarning } from '@/components/SignerMismatchWarning';
 
 interface ProficiencyDeclarationFormProps {
   existing?: NostrEvent;
@@ -67,6 +68,8 @@ export function ProficiencyDeclarationForm({ existing, onPublished, embedded = f
           <LoginArea />
         </div>
       ) : null}
+
+      <SignerMismatchWarning />
 
       <KindTagSelector
         id="proficiency-kinds"

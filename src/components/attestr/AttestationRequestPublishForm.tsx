@@ -19,6 +19,7 @@ import { encodeNpub } from '@/lib/nostrEncodings';
 import { resolveAuthorInput } from '@/lib/nostrIdentity';
 import { ProfileLookupInput } from './ProfileLookupInput';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
+import { SignerMismatchWarning } from '@/components/SignerMismatchWarning';
 
 interface AttestationRequestPublishFormProps {
   assertionEvent?: NostrEvent;
@@ -98,6 +99,8 @@ export function AttestationRequestPublishForm({
           Requestor: <span className="font-mono">{requestorNpub}</span>
         </p>
       ) : null}
+
+      <SignerMismatchWarning />
 
       <div className="space-y-2">
         <Label htmlFor="request-attestor">Requested attestor (optional)</Label>

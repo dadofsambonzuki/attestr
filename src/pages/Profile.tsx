@@ -198,19 +198,23 @@ export default function Profile() {
     [proficiency],
   );
 
-  const recommendedKindCounts = useMemo(() => {
-    const counts = new Map<number, number>();
+  const recommendedKindGroups = useMemo(() => {
+    const groups = new Map<number, Set<string>>();
 
     for (const recommendation of recommendationsTo) {
       if (recommendation.pubkey === pubkey) continue;
 
       const parsed = parseAttestorRecommendation(recommendation);
       for (const kind of parsed.kinds) {
-        counts.set(kind, (counts.get(kind) ?? 0) + 1);
+        const existing = groups.get(kind) ?? new Set<string>();
+        existing.add(recommendation.pubkey);
+        groups.set(kind, existing);
       }
     }
 
-    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+    return [...groups.entries()]
+      .map(([kind, recommenders]) => ({ kind, recommenders: [...recommenders] }))
+      .sort((a, b) => b.recommenders.length - a.recommenders.length || a.kind - b.kind);
   }, [recommendationsTo, pubkey]);
 
   const receivedAssertionGroups = useMemo(() => {
@@ -308,20 +312,7 @@ export default function Profile() {
                 </a>
               ))}
 
-              {!isOwnProfile && user ? (
-                <AttestorRecommendationDialog
-                  recommendedAttestorPubkey={pubkey}
-                  open={recommendDialogOpen}
-                  onOpenChange={setRecommendDialogOpen}
-                  onPublished={() => {
-                    void recommendationsToQuery.refetch();
-                  }}
-                >
-                  <Button variant="outline" size="sm">
-                    Recommend this attestor
-                  </Button>
-                </AttestorRecommendationDialog>
-              ) : null}
+
             </div>
           </CardContent>
         </Card>
@@ -358,14 +349,12 @@ export default function Profile() {
                   Last updated: {new Date(proficiency.created_at * 1000).toLocaleString()}
                 </p>
 
-                {recommendedKindCounts.length > 0 ? (
+                {recommendedKindGroups.length > 0 ? (
                   <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50/70 p-3">
                     <p className="text-xs font-medium text-slate-700">Recommended by others</p>
-                    <div className="flex flex-wrap gap-2">
-                      {recommendedKindCounts.map(([kind, count]) => (
-                        <Badge key={`recommended-${kind}`} variant="outline">
-                          {formatKind(kind)} × {count}
-                        </Badge>
+                    <div className="flex flex-col gap-2">
+                      {recommendedKindGroups.map(({ kind, recommenders }) => (
+                        <RecommendedKindCard key={kind} kind={kind} recommenderPubkeys={recommenders} />
                       ))}
                     </div>
                   </div>
@@ -541,8 +530,22 @@ export default function Profile() {
           </Card>
 
           <Card className="border-slate-200 bg-white/90 shadow-sm">
-            <CardHeader>
-              <CardTitle>Recommendations to this attestor</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+              <CardTitle>Recommendations for this attestor</CardTitle>
+              {!isOwnProfile && user ? (
+                <AttestorRecommendationDialog
+                  recommendedAttestorPubkey={pubkey}
+                  open={recommendDialogOpen}
+                  onOpenChange={setRecommendDialogOpen}
+                  onPublished={() => {
+                    void recommendationsToQuery.refetch();
+                  }}
+                >
+                  <Button variant="outline" size="sm">
+                    Recommend this attestor
+                  </Button>
+                </AttestorRecommendationDialog>
+              ) : null}
             </CardHeader>
             <CardContent className="space-y-3">
               {recommendationsToQuery.isLoading ? (
@@ -793,6 +796,43 @@ function ReceivedAttestorAvatar({ pubkey, overlapIndex }: { pubkey: string; over
     >
       <AvatarImage src={avatar} alt={name} />
       <AvatarFallback className="text-[9px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+    </Avatar>
+  );
+}
+
+function RecommendedKindCard({ kind, recommenderPubkeys }: { kind: number; recommenderPubkeys: string[] }) {
+  const MAX_AVATARS = 6;
+  const overflow = recommenderPubkeys.length - MAX_AVATARS;
+
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5">
+      <Badge variant="outline" className="shrink-0">{formatKind(kind)}</Badge>
+      <div className="flex items-center gap-1.5">
+        <div className="flex items-center">
+          {recommenderPubkeys.slice(0, MAX_AVATARS).map((pubkey, idx) => (
+            <RecommenderAvatar key={pubkey} pubkey={pubkey} overlapIndex={idx} />
+          ))}
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {overflow > 0 ? `+${overflow} ` : ''}{recommenderPubkeys.length === 1 ? '1 recommender' : `${recommenderPubkeys.length} recommenders`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function RecommenderAvatar({ pubkey, overlapIndex }: { pubkey: string; overlapIndex: number }) {
+  const author = useAuthor(pubkey);
+  const name = getNostrDisplayName(author.data?.metadata, pubkey);
+  const avatar = author.data?.metadata?.picture;
+
+  return (
+    <Avatar
+      className="h-5 w-5 border border-white"
+      style={{ marginLeft: overlapIndex === 0 ? 0 : -6 }}
+    >
+      <AvatarImage src={avatar} alt={name} />
+      <AvatarFallback className="text-[8px]">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
     </Avatar>
   );
 }

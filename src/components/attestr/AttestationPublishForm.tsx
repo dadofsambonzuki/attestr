@@ -23,6 +23,7 @@ import {
   toUnixTimestamp,
 } from '@/lib/attestation';
 import { AttestationStatusLabel } from './AttestationStatusBadge';
+import { SignerMismatchWarning } from '@/components/SignerMismatchWarning';
 
 interface AttestationPublishFormProps {
   assertionEvent?: NostrEvent;
@@ -113,6 +114,8 @@ export function AttestationPublishForm({ assertionEvent, onPublished, embedded =
             <LoginArea />
           </div>
         ) : null}
+
+        <SignerMismatchWarning />
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">

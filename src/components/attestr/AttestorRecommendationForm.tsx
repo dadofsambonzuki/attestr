@@ -8,6 +8,7 @@ import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import { ATTESTOR_RECOMMENDATION_KIND, createAttestorRecommendationD } from '@/lib/attestation';
 import { KindTagSelector } from './KindTagSelector';
+import { SignerMismatchWarning } from '@/components/SignerMismatchWarning';
 
 interface AttestorRecommendationFormProps {
   recommendedAttestorPubkey: string;
@@ -69,6 +70,8 @@ export function AttestorRecommendationForm({
           <LoginArea />
         </div>
       ) : null}
+
+      <SignerMismatchWarning />
 
       <KindTagSelector
         id="recommendation-kinds"
