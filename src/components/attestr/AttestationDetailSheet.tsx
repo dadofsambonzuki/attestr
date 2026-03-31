@@ -47,7 +47,7 @@ export function AttestationDetailSheet({ attestation, assertion, children, onUpd
               Jump to comments
             </Button>
             <Button asChild variant="outline" size="sm">
-              <Link to={`/attestations/${attestationPointer}`}>Permalink</Link>
+              <Link to={`/attestations/${attestationPointer}`}>View details</Link>
             </Button>
           </div>
         </DialogHeader>

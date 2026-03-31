@@ -86,7 +86,7 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
           Request
         </Button>
         <Button asChild type="button" variant="outline" size="sm">
-          <Link to={`/${pointer}`}>Permalink</Link>
+          <Link to={`/${pointer}`}>View details</Link>
         </Button>
         <EventDeletionRequestButton event={assertion} />
       </div>

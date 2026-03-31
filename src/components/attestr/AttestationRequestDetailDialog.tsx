@@ -125,10 +125,7 @@ export function AttestationRequestDetailDialog({
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="outline">Request</Badge>
               <Button asChild variant="outline" size="sm">
-                <Link to={`/requests/${requestPointer}`}>Details page</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to={`/${requestPointer}`}>Permalink</Link>
+                <Link to={`/requests/${requestPointer}`}>View details</Link>
               </Button>
               <DMRequestorButton pubkey={request.pubkey} />
               <EventDeletionRequestButton event={request} />

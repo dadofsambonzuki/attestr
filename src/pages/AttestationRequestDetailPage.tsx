@@ -199,7 +199,7 @@ export default function AttestationRequestDetailPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">Request</Badge>
                   <Button asChild variant="outline" size="sm">
-                    <Link to={`/${encodeEventPointer(request)}`}>Permalink</Link>
+                    <Link to={`/requests/${encodeEventPointer(request)}`}>View details</Link>
                   </Button>
                   <DMRequestorButton pubkey={request.pubkey} />
                   <EventDeletionRequestButton event={request} />
