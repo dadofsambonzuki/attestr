@@ -12,8 +12,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { NostrLoginProvider } from '@nostrify/react/login';
 import { AppProvider } from '@/components/AppProvider';
 import { NWCProvider } from '@/contexts/NWCContext';
+import { DMProvider, type DMConfig } from '@/components/DMProvider';
+import { PROTOCOL_MODE } from '@/lib/dmConstants';
 import { AppConfig } from '@/contexts/AppContext';
 import AppRouter from './AppRouter';
+
+const dmConfig: DMConfig = {
+  enabled: true,
+  protocolMode: PROTOCOL_MODE.NIP17_ONLY,
+};
 
 const head = createHead({
   plugins: [
@@ -51,6 +58,7 @@ export function App() {
           <NostrLoginProvider storageKey='nostr:login'>
             <NostrProvider>
               <NostrSync />
+              <DMProvider config={dmConfig}>
               <NWCProvider>
                 <TooltipProvider>
                   <Toaster />
@@ -59,6 +67,7 @@ export function App() {
                   </Suspense>
                 </TooltipProvider>
               </NWCProvider>
+              </DMProvider>
             </NostrProvider>
           </NostrLoginProvider>
         </QueryClientProvider>

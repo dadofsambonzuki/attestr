@@ -16,15 +16,17 @@ import { useAuthor } from '@/hooks/useAuthor';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
+  ATTESTATION_KIND,
   ATTESTATION_REQUEST_KIND,
   ATTESTOR_PROFICIENCY_DECLARATION_KIND,
+  parseAttestation,
   parseAttestationRequest,
   parseAttestorProficiencyDeclaration,
 } from '@/lib/attestation';
 import { getProfilePath } from '@/lib/nostrEncodings';
 import { formatKind } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
-import type { NostrEvent } from '@nostrify/nostrify';
+import type { NostrEvent, NostrFilter } from '@nostrify/nostrify';
 
 export default function Marketplace() {
   const { nostr } = useNostr();
@@ -47,6 +49,86 @@ export default function Marketplace() {
 
   const requests = useMemo(() => requestsQuery.data ?? [], [requestsQuery.data]);
   const { data: assertionData } = useAssertionEvents(requests);
+
+  const assertionRefs = useMemo(() => {
+    const eRefs = new Set<string>();
+    const aRefs = new Set<string>();
+
+    for (const request of requests) {
+      const parsed = parseAttestationRequest(request);
+      if (!parsed.assertionRef) continue;
+
+      if (parsed.assertionRef.type === 'e') {
+        eRefs.add(parsed.assertionRef.value);
+      } else {
+        aRefs.add(parsed.assertionRef.value);
+      }
+    }
+
+    return {
+      eRefs: [...eRefs.values()],
+      aRefs: [...aRefs.values()],
+    };
+  }, [requests]);
+
+  const requestAttestationsQuery = useQuery({
+    queryKey: ['nostr', 'marketplace-attestations-for-requests', assertionRefs.eRefs, assertionRefs.aRefs],
+    queryFn: async () => {
+      const filters: NostrFilter[] = [];
+
+      if (assertionRefs.eRefs.length > 0) {
+        filters.push({
+          kinds: [ATTESTATION_KIND],
+          '#e': assertionRefs.eRefs,
+          limit: 400,
+        });
+      }
+
+      if (assertionRefs.aRefs.length > 0) {
+        filters.push({
+          kinds: [ATTESTATION_KIND],
+          '#a': assertionRefs.aRefs,
+          limit: 400,
+        });
+      }
+
+      if (filters.length === 0) {
+        return [] as NostrEvent[];
+      }
+
+      return nostr.query(filters, { signal: AbortSignal.timeout(6000) });
+    },
+    enabled: assertionRefs.eRefs.length > 0 || assertionRefs.aRefs.length > 0,
+  });
+
+  const attestorsByAssertionRef = useMemo(() => {
+    const buckets = new Map<string, Map<string, number>>();
+
+    for (const attestation of requestAttestationsQuery.data ?? []) {
+      const parsed = parseAttestation(attestation);
+      if (!parsed.assertionRef) continue;
+
+      const key = `${parsed.assertionRef.type}:${parsed.assertionRef.value}`;
+      const byPubkey = buckets.get(key) ?? new Map<string, number>();
+      const previous = byPubkey.get(attestation.pubkey);
+      if (!previous || attestation.created_at > previous) {
+        byPubkey.set(attestation.pubkey, attestation.created_at);
+      }
+      buckets.set(key, byPubkey);
+    }
+
+    const resolved = new Map<string, string[]>();
+    for (const [key, byPubkey] of buckets.entries()) {
+      resolved.set(
+        key,
+        [...byPubkey.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([pubkey]) => pubkey),
+      );
+    }
+
+    return resolved;
+  }, [requestAttestationsQuery.data]);
 
   const myProficiencyQuery = useQuery({
     queryKey: ['nostr', 'marketplace-my-proficiency', user?.pubkey ?? ''],
@@ -90,6 +172,9 @@ export default function Marketplace() {
           assertion,
           assertionKind,
           matchesMyProficiency,
+          existingAttestors: parsed.assertionRef
+            ? (attestorsByAssertionRef.get(`${parsed.assertionRef.type}:${parsed.assertionRef.value}`) ?? [])
+            : [],
         };
       })
       .sort((a, b) => {
@@ -98,7 +183,7 @@ export default function Marketplace() {
         }
         return b.request.created_at - a.request.created_at;
       });
-  }, [requests, assertionData, proficiencyKinds]);
+  }, [requests, assertionData, proficiencyKinds, attestorsByAssertionRef]);
 
   useSeoMeta({
     title: 'Marketplace • Attestr',
@@ -166,13 +251,14 @@ export default function Marketplace() {
               <p className="text-sm text-muted-foreground">No attestation requests found right now.</p>
             ) : (
               <div className="space-y-3">
-                {rankedRequests.map(({ request, assertion, assertionKind, matchesMyProficiency }) => (
+                {rankedRequests.map(({ request, assertion, assertionKind, matchesMyProficiency, existingAttestors }) => (
                   <MarketplaceRequestCard
                     key={request.id}
                     request={request}
                     assertion={assertion}
                     assertionKind={assertionKind}
                     highlighted={matchesMyProficiency}
+                    existingAttestors={existingAttestors}
                   />
                 ))}
               </div>
@@ -189,11 +275,13 @@ function MarketplaceRequestCard({
   assertion,
   assertionKind,
   highlighted,
+  existingAttestors,
 }: {
   request: NostrEvent;
   assertion?: NostrEvent;
   assertionKind?: number;
   highlighted: boolean;
+  existingAttestors: string[];
 }) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const requester = useAuthor(request.pubkey);
@@ -257,6 +345,22 @@ function MarketplaceRequestCard({
           </p>
         </div>
 
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Existing attestors</span>
+          {existingAttestors.length > 0 ? (
+            <>
+              <span className="text-xs font-medium text-slate-700">{existingAttestors.length}</span>
+              <div className="flex items-center gap-1">
+                {existingAttestors.slice(0, 6).map((attestor) => (
+                  <ExistingAttestorAvatar key={attestor} pubkey={attestor} onCardClickStop />
+                ))}
+              </div>
+            </>
+          ) : (
+            <span className="text-xs text-muted-foreground">None yet</span>
+          )}
+        </div>
+
         {requestedAttestors.length > 0 ? (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">Requested attestors</span>
@@ -299,6 +403,28 @@ function RequestedAttestorPill({ pubkey, onCardClickStop = false }: { pubkey: st
         <AvatarFallback className="text-[8px]">{displayName.slice(0, 2).toUpperCase()}</AvatarFallback>
       </Avatar>
       <span className="truncate">{displayName}</span>
+    </a>
+  );
+}
+
+function ExistingAttestorAvatar({ pubkey, onCardClickStop = false }: { pubkey: string; onCardClickStop?: boolean }) {
+  const author = useAuthor(pubkey);
+  const displayName = getNostrDisplayName(author.data?.metadata, pubkey);
+  const avatar = author.data?.metadata?.picture;
+
+  return (
+    <a
+      href={getProfilePath(pubkey)}
+      onClick={(event) => {
+        if (onCardClickStop) event.stopPropagation();
+      }}
+      title={displayName}
+      className="inline-flex"
+    >
+      <Avatar className="h-5 w-5 border border-slate-200">
+        <AvatarImage src={avatar} alt={displayName} />
+        <AvatarFallback className="text-[8px]">{displayName.slice(0, 2).toUpperCase()}</AvatarFallback>
+      </Avatar>
     </a>
   );
 }

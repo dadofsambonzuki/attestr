@@ -2,7 +2,7 @@
 // It is important that all functionality in this file is preserved, and should only be modified if explicitly requested.
 
 import { useState } from 'react';
-import { ChevronDown, LogOut, Settings2, UserIcon, UserPlus } from 'lucide-react';
+import { ChevronDown, LogOut, MessageCircle, Settings2, UserIcon, UserPlus } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.tsx'
 import { useLoggedInAccounts, type Account } from '@/hooks/useLoggedInAccounts';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { RelayListManager } from '@/components/RelayListManager';
+import { DMMessagingInterface } from '@/components/dm/DMMessagingInterface';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ interface AccountSwitcherProps {
 export function AccountSwitcher({ onAddAccountClick }: AccountSwitcherProps) {
   const { currentUser, otherUsers, setLogin, removeLogin } = useLoggedInAccounts();
   const [relayDialogOpen, setRelayDialogOpen] = useState(false);
+  const [messagesDialogOpen, setMessagesDialogOpen] = useState(false);
 
   if (!currentUser) return null;
 
@@ -72,6 +74,16 @@ export function AccountSwitcher({ onAddAccountClick }: AccountSwitcherProps) {
         <DropdownMenuItem
           onSelect={(event) => {
             event.preventDefault();
+            setMessagesDialogOpen(true);
+          }}
+          className='flex items-center gap-2 cursor-pointer p-2 rounded-md'
+        >
+          <MessageCircle className='w-4 h-4' />
+          <span>Messages</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault();
             setRelayDialogOpen(true);
           }}
           className='flex items-center gap-2 cursor-pointer p-2 rounded-md'
@@ -94,6 +106,14 @@ export function AccountSwitcher({ onAddAccountClick }: AccountSwitcherProps) {
           <span>Log out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      <Dialog open={messagesDialogOpen} onOpenChange={setMessagesDialogOpen}>
+        <DialogContent className='h-[85vh] max-h-[720px] w-[95vw] overflow-hidden p-2 sm:max-w-3xl'>
+          <DialogTitle className='sr-only'>Messages</DialogTitle>
+          <DialogDescription className='sr-only'>Direct messages</DialogDescription>
+          <DMMessagingInterface className='h-full' />
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={relayDialogOpen} onOpenChange={setRelayDialogOpen}>
         <DialogContent className='sm:max-w-2xl'>

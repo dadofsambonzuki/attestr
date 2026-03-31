@@ -5,6 +5,7 @@ import Index from "./pages/Index";
 import Attest from "./pages/Attest";
 import Attestations from "./pages/Attestations";
 import AttestationEventPage from "./pages/AttestationEventPage";
+import AttestationRequestDetailPage from "./pages/AttestationRequestDetailPage";
 import Developers from "./pages/Developers";
 import Marketplace from "./pages/Marketplace";
 import Profile from "./pages/Profile";
@@ -20,6 +21,7 @@ export function AppRouter() {
         <Route path="/attest" element={<Attest />} />
         <Route path="/attestations" element={<Attestations />} />
         <Route path="/attestations/:id" element={<AttestationEventPage />} />
+        <Route path="/requests/:id" element={<AttestationRequestDetailPage />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/developers" element={<Developers />} />
         <Route path="/profile/:identifier" element={<Profile />} />
