@@ -271,23 +271,21 @@ export const DMConversationList = ({
         ) : null}
       </div>
 
-      {/* Content area - show skeleton during initial load, otherwise show conversations */}
+      {/* Content area - always top-aligned and scrollable */}
       <div className="flex-1 min-h-0 mt-1 overflow-hidden">
-        {(isLoading || isInitialLoad) ? (
-          <ConversationListSkeleton />
-        ) : conversations.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-center text-muted-foreground px-4">
-            <div>
+        <ScrollArea key={activeTab} className="h-full w-full">
+          {(isLoading || isInitialLoad) ? (
+            <ConversationListSkeleton />
+          ) : conversations.length === 0 ? (
+            <div className="px-4 py-3 text-muted-foreground">
               <p className="text-sm">No conversations yet</p>
               <p className="text-xs mt-1">Start a new conversation to get started</p>
             </div>
-          </div>
-        ) : currentConversations.length === 0 ? (
-          <div className="px-4 py-3 text-muted-foreground">
-            <p className="text-sm">No {activeTab} conversations</p>
-          </div>
-        ) : (
-          <ScrollArea className="h-full w-full">
+          ) : currentConversations.length === 0 ? (
+            <div className="px-4 py-3 text-muted-foreground">
+              <p className="text-sm">No {activeTab} conversations</p>
+            </div>
+          ) : (
             <div className="w-full px-2 py-2 space-y-1">
               {currentConversations.map((conversation) => (
                 <ConversationItem
@@ -301,8 +299,8 @@ export const DMConversationList = ({
                 />
               ))}
             </div>
-          </ScrollArea>
-        )}
+          )}
+        </ScrollArea>
       </div>
     </Card>
   );
