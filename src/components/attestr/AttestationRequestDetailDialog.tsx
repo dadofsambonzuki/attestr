@@ -47,6 +47,12 @@ export function AttestationRequestDetailDialog({
   const requester = useAuthor(request.pubkey);
   const requesterName = getNostrDisplayName(requester.data?.metadata, request.pubkey);
   const requesterAvatar = requester.data?.metadata?.picture;
+  const asserterPubkey = assertion?.pubkey;
+  const asserter = useAuthor(asserterPubkey);
+  const asserterName = asserterPubkey
+    ? getNostrDisplayName(asserter.data?.metadata, asserterPubkey)
+    : 'Unknown assertor';
+  const asserterAvatar = asserter.data?.metadata?.picture;
   const requestPointer = encodeEventPointer(request);
   const parsedRequest = parseAttestationRequest(request);
 
@@ -121,6 +127,23 @@ export function AttestationRequestDetailDialog({
             <p className="mt-2 line-clamp-3 text-sm text-slate-700">
               {request.content.trim() || 'No request message.'}
             </p>
+
+            <div className="mt-3 rounded-md border border-slate-200 bg-white/90 p-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <Avatar className="h-6 w-6 border border-slate-200">
+                  <AvatarImage src={asserterAvatar} alt={asserterName} />
+                  <AvatarFallback className="text-[9px]">{asserterName.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                {asserterPubkey ? (
+                  <a href={getProfilePath(asserterPubkey)} className="truncate text-xs font-medium text-slate-800 hover:underline">
+                    {asserterName}
+                  </a>
+                ) : (
+                  <span className="truncate text-xs font-medium text-slate-800">{asserterName}</span>
+                )}
+                <span className="text-[11px] text-muted-foreground">made the assertion</span>
+              </div>
+            </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="outline">Request</Badge>

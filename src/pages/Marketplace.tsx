@@ -287,6 +287,12 @@ function MarketplaceRequestCard({
   const requester = useAuthor(request.pubkey);
   const requesterName = getNostrDisplayName(requester.data?.metadata, request.pubkey);
   const requesterAvatar = requester.data?.metadata?.picture;
+  const asserterPubkey = assertion?.pubkey;
+  const asserter = useAuthor(asserterPubkey);
+  const asserterName = asserterPubkey
+    ? getNostrDisplayName(asserter.data?.metadata, asserterPubkey)
+    : 'Unknown assertor';
+  const asserterAvatar = asserter.data?.metadata?.picture;
 
   const requestedAttestors = request.tags
     .filter(([name, value]) => name === 'p' && value)
@@ -332,6 +338,25 @@ function MarketplaceRequestCard({
               {requesterName}
             </a>
             <span className="text-[11px] text-muted-foreground">requested this attestation</span>
+          </div>
+
+          <div className="mt-2 flex min-w-0 items-center gap-2">
+            <Avatar className="h-6 w-6 border border-slate-200">
+              <AvatarImage src={asserterAvatar} alt={asserterName} />
+              <AvatarFallback className="text-[9px]">{asserterName.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            {asserterPubkey ? (
+              <a
+                href={getProfilePath(asserterPubkey)}
+                onClick={(event) => event.stopPropagation()}
+                className="truncate text-xs font-medium text-slate-800 hover:underline"
+              >
+                {asserterName}
+              </a>
+            ) : (
+              <span className="truncate text-xs font-medium text-slate-800">{asserterName}</span>
+            )}
+            <span className="text-[11px] text-muted-foreground">made the assertion</span>
           </div>
         </div>
 
