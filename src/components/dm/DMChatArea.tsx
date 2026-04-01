@@ -301,7 +301,7 @@ export const DMChatArea = ({ pubkey, onBack, className }: DMChatAreaProps) => {
 
   if (!pubkey) {
     return (
-      <Card className={cn("h-full", className)}>
+      <Card className={cn("h-full min-h-0", className)}>
         <EmptyState isLoading={isLoading} />
       </Card>
     );
@@ -309,7 +309,7 @@ export const DMChatArea = ({ pubkey, onBack, className }: DMChatAreaProps) => {
 
   if (!user) {
     return (
-      <Card className={cn("h-full flex items-center justify-center", className)}>
+      <Card className={cn("h-full min-h-0 flex items-center justify-center", className)}>
         <div className="text-center text-muted-foreground">
           <p className="text-sm">Please log in to view messages</p>
         </div>
@@ -318,10 +318,10 @@ export const DMChatArea = ({ pubkey, onBack, className }: DMChatAreaProps) => {
   }
 
   return (
-    <Card className={cn("h-full flex flex-col", className)}>
+    <Card className={cn("h-full min-h-0 overflow-hidden flex flex-col", className)}>
       <ChatHeader pubkey={pubkey} onBack={onBack} />
       
-      <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
+      <ScrollArea ref={scrollAreaRef} className="min-h-0 flex-1 p-4">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center text-muted-foreground">

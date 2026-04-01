@@ -50,10 +50,10 @@ export const DMMessagingInterface = ({ className }: DMMessagingInterfaceProps) =
         </DialogContent>
       </Dialog>
 
-      <div className={cn("flex gap-4 overflow-hidden", className)}>
+      <div className={cn("flex h-full min-h-0 w-full gap-4 overflow-hidden", className)}>
         {/* Conversation List - Left Sidebar */}
         <div className={cn(
-          "md:w-80 md:flex-shrink-0",
+          "min-h-0 md:w-80 md:flex-shrink-0",
           isMobile && !showConversationList && "hidden",
           isMobile && showConversationList && "w-full"
         )}>
@@ -67,7 +67,7 @@ export const DMMessagingInterface = ({ className }: DMMessagingInterfaceProps) =
 
         {/* Chat Area - Right Panel */}
         <div className={cn(
-          "flex-1 md:min-w-0",
+          "min-h-0 flex-1 md:min-w-0",
           isMobile && !showChatArea && "hidden",
           isMobile && showChatArea && "w-full"
         )}>
@@ -81,4 +81,3 @@ export const DMMessagingInterface = ({ className }: DMMessagingInterfaceProps) =
     </>
   );
 };
-

@@ -6,6 +6,7 @@ import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { formatConversationTime, formatFullDateTime } from '@/lib/dmUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { LOADING_PHASES } from '@/lib/dmConstants';
 import { encodeNpub, getProfilePath } from '@/lib/nostrEncodings';
+import { normalizeToPubkey } from '@/lib/nostrIdentity';
 
 interface DMConversationListProps {
   selectedPubkey: string | null;
@@ -146,6 +148,20 @@ export const DMConversationList = ({
 }: DMConversationListProps) => {
   const { conversations, isLoading, loadingPhase } = useDMContext();
   const [activeTab, setActiveTab] = useState<'known' | 'requests'>('known');
+  const [recipientInput, setRecipientInput] = useState('');
+  const [composeError, setComposeError] = useState<string | null>(null);
+
+  const handleStartConversation = () => {
+    const normalized = normalizeToPubkey(recipientInput.trim());
+    if (!normalized) {
+      setComposeError('Enter a valid npub, nprofile, or hex pubkey');
+      return;
+    }
+
+    setComposeError(null);
+    setRecipientInput('');
+    onSelectConversation(normalized);
+  };
 
   // Filter conversations by type
   const { knownConversations, requestConversations } = useMemo(() => {
@@ -162,7 +178,7 @@ export const DMConversationList = ({
   const isInitialLoad = (loadingPhase === LOADING_PHASES.CACHE || loadingPhase === LOADING_PHASES.RELAYS) && conversations.length === 0;
 
   return (
-    <Card className={cn("h-full flex flex-col overflow-hidden", className)}>
+    <Card className={cn("h-full min-h-0 w-full flex flex-col overflow-hidden", className)}>
       {/* Header - always visible */}
       <div className="p-4 border-b flex-shrink-0 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -229,8 +245,34 @@ export const DMConversationList = ({
         </div>
       </div>
       
+      <div className="px-2 pt-2 pb-1 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <Input
+            value={recipientInput}
+            onChange={(event) => {
+              setRecipientInput(event.target.value);
+              if (composeError) setComposeError(null);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                handleStartConversation();
+              }
+            }}
+            placeholder="Start DM with npub/pubkey"
+            className="h-8 text-xs"
+          />
+          <Button size="sm" className="h-8" onClick={handleStartConversation}>
+            Send DM
+          </Button>
+        </div>
+        {composeError ? (
+          <p className="mt-1 text-[11px] text-destructive">{composeError}</p>
+        ) : null}
+      </div>
+
       {/* Content area - show skeleton during initial load, otherwise show conversations */}
-      <div className="flex-1 min-h-0 mt-2 overflow-hidden">
+      <div className="flex-1 min-h-0 mt-1 overflow-hidden">
         {(isLoading || isInitialLoad) ? (
           <ConversationListSkeleton />
         ) : conversations.length === 0 ? (
