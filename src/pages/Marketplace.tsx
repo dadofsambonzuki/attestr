@@ -340,24 +340,6 @@ function MarketplaceRequestCard({
             <span className="text-[11px] text-muted-foreground">requested this attestation</span>
           </div>
 
-          <div className="mt-2 flex min-w-0 items-center gap-2">
-            <Avatar className="h-6 w-6 border border-slate-200">
-              <AvatarImage src={asserterAvatar} alt={asserterName} />
-              <AvatarFallback className="text-[9px]">{asserterName.slice(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            {asserterPubkey ? (
-              <a
-                href={getProfilePath(asserterPubkey)}
-                onClick={(event) => event.stopPropagation()}
-                className="truncate text-xs font-medium text-slate-800 hover:underline"
-              >
-                {asserterName}
-              </a>
-            ) : (
-              <span className="truncate text-xs font-medium text-slate-800">{asserterName}</span>
-            )}
-            <span className="text-[11px] text-muted-foreground">made the assertion</span>
-          </div>
         </div>
 
         <p className="mt-2 line-clamp-2 text-sm text-slate-700">
@@ -365,6 +347,24 @@ function MarketplaceRequestCard({
         </p>
 
         <div className="mt-2 rounded-md border border-slate-200 bg-white/90 p-2">
+          <div className="mb-1.5 flex min-w-0 items-center gap-2">
+            <Avatar className="h-5 w-5 border border-slate-200">
+              <AvatarImage src={asserterAvatar} alt={asserterName} />
+              <AvatarFallback className="text-[8px]">{asserterName.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            {asserterPubkey ? (
+              <a
+                href={getProfilePath(asserterPubkey)}
+                onClick={(event) => event.stopPropagation()}
+                className="truncate text-[11px] font-medium text-slate-800 hover:underline"
+              >
+                {asserterName}
+              </a>
+            ) : (
+              <span className="truncate text-[11px] font-medium text-slate-800">{asserterName}</span>
+            )}
+            <span className="text-[11px] text-muted-foreground">assertor</span>
+          </div>
           <p className="line-clamp-1 text-[11px] text-slate-600">
             {assertion?.content.trim() || 'Assertion content unavailable.'}
           </p>
