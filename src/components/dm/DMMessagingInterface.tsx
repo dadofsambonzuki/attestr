@@ -50,7 +50,7 @@ export const DMMessagingInterface = ({ className }: DMMessagingInterfaceProps) =
         </DialogContent>
       </Dialog>
 
-      <div className={cn("flex h-full min-h-0 w-full gap-4 overflow-hidden", className)}>
+      <div className={cn("flex h-full min-h-0 w-full gap-3 overflow-hidden p-3", className)}>
         {/* Conversation List - Left Sidebar */}
         <div className={cn(
           "min-h-0 md:w-80 md:flex-shrink-0",

@@ -287,8 +287,8 @@ export const DMConversationList = ({
             <p className="text-sm">No {activeTab} conversations</p>
           </div>
         ) : (
-          <ScrollArea className="h-full block">
-            <div className="block w-full px-2 py-2 space-y-1">
+          <ScrollArea className="h-full w-full">
+            <div className="w-full px-2 py-2 space-y-1">
               {currentConversations.map((conversation) => (
                 <ConversationItem
                   key={conversation.pubkey}

@@ -318,7 +318,7 @@ export const DMChatArea = ({ pubkey, onBack, className }: DMChatAreaProps) => {
   }
 
   return (
-    <Card className={cn("h-full min-h-0 overflow-hidden flex flex-col", className)}>
+    <Card className={cn("h-full min-h-0 w-full overflow-hidden flex flex-col", className)}>
       <ChatHeader pubkey={pubkey} onBack={onBack} />
       
       <ScrollArea ref={scrollAreaRef} className="min-h-0 flex-1 p-4">

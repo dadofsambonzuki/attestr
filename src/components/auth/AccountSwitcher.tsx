@@ -2,7 +2,7 @@
 // It is important that all functionality in this file is preserved, and should only be modified if explicitly requested.
 
 import { useState } from 'react';
-import { ChevronDown, LogOut, MessageCircle, Settings2, UserIcon, UserPlus, X } from 'lucide-react';
+import { ChevronDown, LogOut, MessageCircle, Settings2, UserIcon, UserPlus } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,6 @@ import { RelayListManager } from '@/components/RelayListManager';
 import { DMMessagingInterface } from '@/components/dm/DMMessagingInterface';
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -109,16 +108,10 @@ export function AccountSwitcher({ onAddAccountClick }: AccountSwitcherProps) {
       </DropdownMenuContent>
 
       <Dialog open={messagesDialogOpen} onOpenChange={setMessagesDialogOpen}>
-        <DialogContent className='h-[85vh] max-h-[720px] w-[95vw] overflow-hidden p-0 sm:max-w-3xl [&>button:first-child]:hidden'>
+        <DialogContent className='h-[85vh] max-h-[720px] w-[95vw] overflow-hidden p-0 sm:max-w-3xl'>
           <DialogTitle className='sr-only'>Messages</DialogTitle>
           <DialogDescription className='sr-only'>Direct messages</DialogDescription>
-          <div className='relative h-full'>
-            <DialogClose className='absolute right-3 top-3 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'>
-              <X className='h-4 w-4' />
-              <span className='sr-only'>Close</span>
-            </DialogClose>
-            <DMMessagingInterface className='h-full' />
-          </div>
+          <DMMessagingInterface className='h-full min-h-0' />
         </DialogContent>
       </Dialog>
 
