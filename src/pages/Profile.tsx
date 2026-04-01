@@ -519,6 +519,7 @@ export default function Profile() {
                   <ProfileRecommendationCard
                     key={recommendation.id}
                     recommendation={recommendation}
+                    perspective="from"
                     onUpdated={() => {
                       void recommendationsFromQuery.refetch();
                       void recommendationsToQuery.refetch();
@@ -561,6 +562,7 @@ export default function Profile() {
                   <ProfileRecommendationCard
                     key={recommendation.id}
                     recommendation={recommendation}
+                    perspective="to"
                     onUpdated={() => {
                       void recommendationsFromQuery.refetch();
                       void recommendationsToQuery.refetch();
@@ -687,11 +689,24 @@ function ProfileRequestCard({ request, assertion }: { request: NostrEvent; asser
   );
 }
 
-function ProfileRecommendationCard({ recommendation, onUpdated }: { recommendation: NostrEvent; onUpdated?: () => void }) {
+function ProfileRecommendationCard({
+  recommendation,
+  perspective,
+  onUpdated,
+}: {
+  recommendation: NostrEvent;
+  perspective: 'from' | 'to';
+  onUpdated?: () => void;
+}) {
   const parsed = parseAttestorRecommendation(recommendation);
-  const recommender = useAuthor(recommendation.pubkey);
-  const recommenderName = getNostrDisplayName(recommender.data?.metadata, recommendation.pubkey);
-  const recommenderAvatar = recommender.data?.metadata?.picture;
+  const subjectPubkey = perspective === 'from'
+    ? parsed.recommendedAttestor
+    : recommendation.pubkey;
+  const subjectAuthor = useAuthor(subjectPubkey);
+  const subjectName = subjectPubkey
+    ? getNostrDisplayName(subjectAuthor.data?.metadata, subjectPubkey)
+    : 'Unknown attestor';
+  const subjectAvatar = subjectAuthor.data?.metadata?.picture;
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   return (
@@ -703,12 +718,16 @@ function ProfileRecommendationCard({ recommendation, onUpdated }: { recommendati
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <Avatar className="h-6 w-6 border border-slate-200">
-              <AvatarImage src={recommenderAvatar} alt={recommenderName} />
-              <AvatarFallback className="text-[9px]">{recommenderName.slice(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={subjectAvatar} alt={subjectName} />
+              <AvatarFallback className="text-[9px]">{subjectName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <a href={getProfilePath(recommendation.pubkey)} className="truncate text-xs font-medium text-slate-800 hover:underline">
-              {recommenderName}
-            </a>
+            {subjectPubkey ? (
+              <a href={getProfilePath(subjectPubkey)} className="truncate text-xs font-medium text-slate-800 hover:underline">
+                {subjectName}
+              </a>
+            ) : (
+              <span className="truncate text-xs font-medium text-slate-800">{subjectName}</span>
+            )}
           </div>
           <span className="text-xs text-muted-foreground">
             {new Date(recommendation.created_at * 1000).toLocaleString()}
