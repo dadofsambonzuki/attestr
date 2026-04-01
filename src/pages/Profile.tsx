@@ -19,6 +19,7 @@ import {
   ATTESTATION_REQUEST_KIND,
   ATTESTOR_PROFICIENCY_DECLARATION_KIND,
   ATTESTOR_RECOMMENDATION_KIND,
+  parseAddressCoordinate,
   parseAttestation,
   parseAttestationRequest,
   parseAttestorProficiencyDeclaration,
@@ -218,7 +219,12 @@ export default function Profile() {
   }, [recommendationsTo, pubkey]);
 
   const receivedAssertionGroups = useMemo(() => {
-    const grouped = new Map<string, { assertion: NostrEvent; attestations: NostrEvent[] }>();
+    const grouped = new Map<string, {
+      assertion?: NostrEvent;
+      assertionKind?: number;
+      assertionRef: string;
+      attestations: NostrEvent[];
+    }>();
 
     for (const attestation of receivedAttestations) {
       const parsed = parseAttestation(attestation);
@@ -230,13 +236,33 @@ export default function Profile() {
           ? receivedAssertionData?.byAddress[parsed.assertionRef.value]
           : undefined;
 
-      if (!assertion || assertion.pubkey !== pubkey) continue;
+      const coordinate = parsed.assertionRef.type === 'a'
+        ? parseAddressCoordinate(parsed.assertionRef.value)
+        : null;
+      const isAuthoredAssertion = Boolean(
+        (assertion && assertion.pubkey === pubkey)
+        || (coordinate && coordinate.pubkey === pubkey),
+      );
+      if (!isAuthoredAssertion) continue;
+
+      const inferredKind = assertion?.kind ?? coordinate?.kind;
 
       const key = `${parsed.assertionRef.type}:${parsed.assertionRef.value}`;
       const bucket = grouped.get(key);
       if (!bucket) {
-        grouped.set(key, { assertion, attestations: [attestation] });
+        grouped.set(key, {
+          assertion,
+          assertionKind: inferredKind,
+          assertionRef: parsed.assertionRef.value,
+          attestations: [attestation],
+        });
       } else {
+        if (!bucket.assertion && assertion) {
+          bucket.assertion = assertion;
+        }
+        if (typeof bucket.assertionKind !== 'number' && typeof inferredKind === 'number') {
+          bucket.assertionKind = inferredKind;
+        }
         bucket.attestations.push(attestation);
       }
     }
@@ -246,6 +272,7 @@ export default function Profile() {
         const uniqueAttestors = [...new Set(group.attestations.map((event) => event.pubkey))];
         const latestAttestationAt = Math.max(...group.attestations.map((event) => event.created_at));
         return {
+          groupKey: `${group.assertionRef}:${latestAttestationAt}`,
           ...group,
           uniqueAttestors,
           latestAttestationAt,
@@ -423,8 +450,9 @@ export default function Profile() {
               ) : (
                 receivedAssertionGroups.map((group) => (
                   <ReceivedAssertionSummaryCard
-                    key={group.assertion.id}
+                    key={group.groupKey}
                     assertion={group.assertion}
+                    assertionKind={group.assertionKind}
                     attestationCount={group.attestations.length}
                     attestorPubkeys={group.uniqueAttestors}
                   />
@@ -757,28 +785,42 @@ function ProfileRecommendationCard({
 
 function ReceivedAssertionSummaryCard({
   assertion,
+  assertionKind,
   attestationCount,
   attestorPubkeys,
 }: {
-  assertion: NostrEvent;
+  assertion?: NostrEvent;
+  assertionKind?: number;
   attestationCount: number;
   attestorPubkeys: string[];
 }) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const canOpenDetails = Boolean(assertion);
 
   return (
     <>
       <div
-        className="cursor-pointer rounded-md border border-slate-200 bg-slate-50/70 p-3 transition hover:border-slate-300 hover:bg-white"
-        onClick={() => setIsDetailOpen(true)}
+        className={[
+          'rounded-md border border-slate-200 bg-slate-50/70 p-3 transition',
+          canOpenDetails ? 'cursor-pointer hover:border-slate-300 hover:bg-white' : '',
+        ].join(' ')}
+        onClick={() => {
+          if (canOpenDetails) setIsDetailOpen(true);
+        }}
       >
         <div className="flex items-center justify-between gap-2">
-          <Badge variant="secondary">{formatKind(assertion.kind)}</Badge>
+          <Badge variant="secondary">
+            {typeof assertion?.kind === 'number'
+              ? formatKind(assertion.kind)
+              : typeof assertionKind === 'number'
+                ? formatKind(assertionKind)
+                : 'Event reference'}
+          </Badge>
           <span className="text-xs text-muted-foreground">{attestationCount} attestations</span>
         </div>
 
         <p className="mt-2 line-clamp-2 text-sm text-slate-700">
-          {assertion.content.trim() || 'No assertion content.'}
+          {assertion?.content.trim() || 'Assertion content unavailable on currently connected relays.'}
         </p>
 
         <div className="mt-2 flex items-center gap-2">
@@ -794,11 +836,13 @@ function ReceivedAssertionSummaryCard({
         </div>
       </div>
 
-      <AssertionDetailDialog
-        assertion={assertion}
-        open={isDetailOpen}
-        onOpenChange={setIsDetailOpen}
-      />
+      {assertion ? (
+        <AssertionDetailDialog
+          assertion={assertion}
+          open={isDetailOpen}
+          onOpenChange={setIsDetailOpen}
+        />
+      ) : null}
     </>
   );
 }
