@@ -1,9 +1,20 @@
 import { NKinds, type NostrEvent } from '@nostrify/nostrify';
 
+// Legacy kinds (for migration reference)
 export const ATTESTATION_KIND = 31871;
 export const ATTESTATION_REQUEST_KIND = 31872;
 export const ATTESTOR_RECOMMENDATION_KIND = 31873;
 export const ATTESTOR_PROFICIENCY_DECLARATION_KIND = 11871;
+
+// Trusted Lists kinds (30392-30395)
+export const TRUSTED_LISTS_KIND = 30392;
+export const TRUSTED_LISTS_KIND_MAX = 30395;
+
+// Trusted Lists tag conventions
+export const TL_TAG_TRUSTED_ATTESTORS = 'trusted-attestors';
+export const TL_TAG_TRUSTED_ATTESTOR = 'trusted-attestor';
+export const TL_TAG_KIND_PREFIX = 'k:';
+export const TL_TAG_SUBJECT_PREFIX = 'subject:';
 
 export const ATTESTATION_STATUSES = [
   'verifying',
@@ -53,8 +64,28 @@ export interface ParsedAttestorProficiencyDeclaration {
   kinds: number[];
 }
 
+// Trusted Lists parsed types
+export interface ParsedTrustedAttestors {
+  d: string;
+  kinds: number[];
+  attestors: string[];
+  isProviderOutput: boolean;
+  subjectPubkey?: string;
+}
+
+export interface ParsedTrustedAttestor {
+  d: string;
+  targetPubkey: string;
+  kinds: number[];
+  isSelfDeclaration: boolean;
+}
+
 export function getTagValue(event: NostrEvent, tagName: string): string | undefined {
   return event.tags.find(([name]) => name === tagName)?.[1];
+}
+
+export function getTagValues(event: NostrEvent, tagName: string): string[] {
+  return event.tags.filter(([name]) => name === tagName).map(([, value]) => value).filter(Boolean);
 }
 
 export function parseAttestation(event: NostrEvent): ParsedAttestation {
@@ -123,6 +154,23 @@ export function parseKindTags(event: NostrEvent): number[] {
   return [...deduped.values()].sort((a, b) => a - b);
 }
 
+export function parseTrustedListKindTags(event: NostrEvent): number[] {
+  const deduped = new Set<number>();
+
+  for (const [name, value] of event.tags) {
+    if (name !== 't' || !value) continue;
+    if (!value.startsWith(TL_TAG_KIND_PREFIX)) continue;
+
+    const kindStr = value.slice(TL_TAG_KIND_PREFIX.length);
+    const parsed = Number.parseInt(kindStr, 10);
+    if (Number.isFinite(parsed)) {
+      deduped.add(parsed);
+    }
+  }
+
+  return [...deduped.values()].sort((a, b) => a - b);
+}
+
 export function createAssertionTag(event: NostrEvent): string[] {
   if (NKinds.addressable(event.kind)) {
     return ['a', getAddressCoordinate(event)];
@@ -168,6 +216,273 @@ export function createAttestationRequestD(requestorPubkey: string, assertionEven
 export function createAttestorRecommendationD(recommenderPubkey: string, recommendedAttestorPubkey: string): string {
   const now = Math.floor(Date.now() / 1000);
   return `${recommenderPubkey.slice(0, 8)}:${recommendedAttestorPubkey.slice(0, 8)}:${now}`;
+}
+
+// Trusted Lists builders
+export function buildTrustedAttestorsD(kind: number): string {
+  return `trusted-attestors:${kind}`;
+}
+
+export function buildTrustedAttestorD(targetPubkey: string): string {
+  return `trusted-attestor:${targetPubkey}`;
+}
+
+export function buildProviderOutputTrustedAttestorsD(subjectPubkey: string, kind: number): string {
+  return `trusted-attestors:${subjectPubkey}:${kind}`;
+}
+
+export function buildProviderOutputTrustedAttestorD(subjectPubkey: string, targetPubkey: string): string {
+  return `trusted-attestor:${subjectPubkey}:${targetPubkey}`;
+}
+
+export function buildTrustedAttestorsEvent(
+  authorPubkey: string,
+  kind: number,
+  attestorPubkeys: string[],
+): NostrEvent {
+  const d = buildTrustedAttestorsD(kind);
+  const tags: string[][] = [
+    ['d', d],
+    ['t', TL_TAG_TRUSTED_ATTESTORS],
+    ['t', `${TL_TAG_KIND_PREFIX}${kind}`],
+    ...attestorPubkeys.map(pk => ['p', pk] as string[]),
+  ];
+
+  return {
+    kind: TRUSTED_LISTS_KIND,
+    pubkey: authorPubkey,
+    created_at: Math.floor(Date.now() / 1000),
+    tags,
+    content: '',
+    id: '',
+    sig: '',
+  };
+}
+
+export function buildTrustedAttestorEvent(
+  authorPubkey: string,
+  targetPubkey: string,
+  kinds: number[],
+  isSelfDeclaration: boolean = false,
+): NostrEvent {
+  const d = buildTrustedAttestorD(targetPubkey);
+  const tags: string[][] = [
+    ['d', d],
+    ['t', TL_TAG_TRUSTED_ATTESTOR],
+    ...kinds.map(k => ['t', `${TL_TAG_KIND_PREFIX}${k}`] as string[]),
+    ['p', targetPubkey],
+  ];
+
+  return {
+    kind: TRUSTED_LISTS_KIND,
+    pubkey: authorPubkey,
+    created_at: Math.floor(Date.now() / 1000),
+    tags,
+    content: '',
+    id: '',
+    sig: '',
+  };
+}
+
+// Trusted Lists parsers
+export function parseTrustedAttestors(event: NostrEvent): ParsedTrustedAttestors {
+  const d = getTagValue(event, 'd') ?? '';
+  const kinds = parseTrustedListKindTags(event);
+  const pTags = getTagValues(event, 'p');
+  const subjectTag = getTagValues(event, 't').find(t => t.startsWith(TL_TAG_SUBJECT_PREFIX));
+  const subjectPubkey = subjectTag?.slice(TL_TAG_SUBJECT_PREFIX.length);
+  const isProviderOutput = !!subjectPubkey;
+
+  return {
+    d,
+    kinds,
+    attestors: pTags,
+    isProviderOutput,
+    subjectPubkey,
+  };
+}
+
+export function parseTrustedAttestor(event: NostrEvent): ParsedTrustedAttestor {
+  const d = getTagValue(event, 'd') ?? '';
+  const pTags = getTagValues(event, 'p');
+  const targetPubkey = pTags[0] ?? '';
+  const kinds = parseTrustedListKindTags(event);
+  const isSelfDeclaration = event.pubkey === targetPubkey;
+
+  return {
+    d,
+    targetPubkey,
+    kinds,
+    isSelfDeclaration,
+  };
+}
+
+// Dual-write helpers: publish both legacy and Trusted Lists
+export function buildDualWriteAttestorRecommendation(
+  authorPubkey: string,
+  recommenderPubkey: string,
+  kinds: number[],
+): NostrEvent[] {
+  const legacyD = createAttestorRecommendationD(authorPubkey, recommenderPubkey);
+  const legacyEvent: NostrEvent = {
+    kind: ATTESTOR_RECOMMENDATION_KIND,
+    pubkey: authorPubkey,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      ['d', legacyD],
+      ['p', recommenderPubkey],
+      ...kinds.map(k => ['k', String(k)] as string[]),
+    ],
+    content: '',
+    id: '',
+    sig: '',
+  };
+
+  const trustedEvent = buildTrustedAttestorEvent(authorPubkey, recommenderPubkey, kinds, false);
+
+  return [legacyEvent, trustedEvent];
+}
+
+export function buildDualWriteAttestorProficiency(
+  authorPubkey: string,
+  kinds: number[],
+): NostrEvent[] {
+  const legacyEvent: NostrEvent = {
+    kind: ATTESTOR_PROFICIENCY_DECLARATION_KIND,
+    pubkey: authorPubkey,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: kinds.map(k => ['k', String(k)] as string[]),
+    content: '',
+    id: '',
+    sig: '',
+  };
+
+  const trustedEvent = buildTrustedAttestorEvent(authorPubkey, authorPubkey, kinds, true);
+
+  return [legacyEvent, trustedEvent];
+}
+
+export function buildDualWriteTrustedAttestors(
+  authorPubkey: string,
+  kind: number,
+  attestorPubkeys: string[],
+): NostrEvent[] {
+  // Legacy: 31874 doesn't exist in current codebase, but migration guide references it
+  // For now, only publish Trusted Lists
+  const trustedEvent = buildTrustedAttestorsEvent(authorPubkey, kind, attestorPubkeys);
+  return [trustedEvent];
+}
+
+// Dual-read helpers: prefer Trusted Lists, fallback to legacy
+export interface MergedTrustedAttestors {
+  kinds: number[];
+  attestors: Set<string>;
+  source: 'trusted_lists' | 'legacy' | 'merged';
+  newestTimestamp: number;
+}
+
+export function mergeTrustedAttestors(
+  trustedListsEvents: NostrEvent[],
+  legacyEvents: NostrEvent[],
+): MergedTrustedAttestors | null {
+  const allEvents = [...trustedListsEvents, ...legacyEvents];
+  if (allEvents.length === 0) return null;
+
+  // Pick newest
+  const newest = allEvents.reduce((a, b) => a.created_at > b.created_at ? a : b);
+  const useTrustedLists = trustedListsEvents.length > 0 &&
+    (legacyEvents.length === 0 || newest.kind >= TRUSTED_LISTS_KIND);
+
+  if (useTrustedLists) {
+    const parsed = trustedListsEvents.map(parseTrustedAttestors);
+    const attestors = new Set<string>();
+    const kindsSet = new Set<number>();
+
+    for (const p of parsed) {
+      for (const a of p.attestors) attestors.add(a);
+      for (const k of p.kinds) kindsSet.add(k);
+    }
+
+    return {
+      kinds: [...kindsSet].sort((a, b) => a - b),
+      attestors,
+      source: 'trusted_lists',
+      newestTimestamp: newest.created_at,
+    };
+  } else {
+    // Legacy 31874 fallback
+    const attestors = new Set<string>();
+    const kindsSet = new Set<number>();
+
+    for (const event of legacyEvents) {
+      for (const [name, value] of event.tags) {
+        if (name === 'p' && value) attestors.add(value);
+        if (name === 'k' && value) {
+          const parsed = Number.parseInt(value, 10);
+          if (Number.isFinite(parsed)) kindsSet.add(parsed);
+        }
+      }
+    }
+
+    return {
+      kinds: [...kindsSet].sort((a, b) => a - b),
+      attestors,
+      source: 'legacy',
+      newestTimestamp: newest.created_at,
+    };
+  }
+}
+
+export function mergeTrustedAttestorEdges(
+  trustedListsEvents: NostrEvent[],
+  legacyEvents: NostrEvent[],
+): Map<string, { kinds: number[]; isSelfDeclaration: boolean; newestTimestamp: number }> {
+  const result = new Map<string, { kinds: number[]; isSelfDeclaration: boolean; newestTimestamp: number }>();
+
+  // Process Trusted Lists events
+  for (const event of trustedListsEvents) {
+    const parsed = parseTrustedAttestor(event);
+    const existing = result.get(parsed.targetPubkey);
+
+    if (!existing || event.created_at > existing.newestTimestamp) {
+      result.set(parsed.targetPubkey, {
+        kinds: parsed.kinds,
+        isSelfDeclaration: parsed.isSelfDeclaration,
+        newestTimestamp: event.created_at,
+      });
+    } else if (event.created_at === existing.newestTimestamp) {
+      // Merge kinds
+      const mergedKinds = new Set([...existing.kinds, ...parsed.kinds]);
+      existing.kinds = [...mergedKinds].sort((a, b) => a - b);
+    }
+  }
+
+  // Process legacy events (31873 -> trusted-attestor, 11871 -> self-declaration)
+  for (const event of legacyEvents) {
+    const pTags = getTagValues(event, 'p');
+    const kinds = parseKindTags(event);
+    const targetPubkey = pTags[0];
+
+    if (!targetPubkey) continue;
+
+    const isSelfDeclaration = event.pubkey === targetPubkey ||
+      event.kind === ATTESTOR_PROFICIENCY_DECLARATION_KIND;
+
+    const existing = result.get(targetPubkey);
+
+    if (!existing || event.created_at > existing.newestTimestamp) {
+      result.set(targetPubkey, {
+        kinds,
+        isSelfDeclaration,
+        newestTimestamp: event.created_at,
+      });
+    } else if (event.created_at === existing.newestTimestamp) {
+      const mergedKinds = new Set([...existing.kinds, ...kinds]);
+      existing.kinds = [...mergedKinds].sort((a, b) => a - b);
+    }
+  }
+
+  return result;
 }
 
 export function toUnixTimestamp(dateTimeLocal: string): number | undefined {

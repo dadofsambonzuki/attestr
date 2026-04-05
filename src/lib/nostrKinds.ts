@@ -81,6 +81,11 @@ const KIND_NAME_BY_NUMBER: Record<number, string> = {
   30312: 'Interactive Room',
   30313: 'Conference Event',
   30315: 'User Status',
+  // Trusted Lists (30392-30395)
+  30392: 'Trusted List',
+  30393: 'Trusted List (Topic-based)',
+  30394: 'Trusted List (Deduplicated)',
+  30395: 'Trusted List (With Metadata)',
   30382: 'User Trusted Assertion',
   30383: 'Event Trusted Assertion',
   30384: 'Addressable Trusted Assertion',
@@ -107,10 +112,13 @@ const KIND_NAME_BY_NUMBER: Record<number, string> = {
   39089: 'Starter Packs',
   39092: 'Media Starter Packs',
   39701: 'Web Bookmarks',
+  // Attestation kinds (legacy + Trusted Lists migrated equivalents)
   11871: 'Attestor Proficiency Declaration',
   31871: 'Attestation',
   31872: 'Attestation Request',
-  31873: 'Attestor Recommendation',
+  31873: 'Attestor Recommendation (Legacy)',
+  31874: 'Trusted Attestors (Legacy)',
+  // Note: 30392 serves as the replacement for 31873, 31874, and 11871
 };
 
 export interface NostrKindOption {
@@ -124,7 +132,7 @@ export function getKindName(kind: number): string | null {
 
 export function formatKind(kind: number): string {
   const kindName = getKindName(kind);
-  return kindName ? `${kindName} [${kind}]` : `Unkown [${kind}]`;
+  return kindName ? `${kindName} [${kind}]` : `Unknown [${kind}]`;
 }
 
 export function getNostrKindOptions(): NostrKindOption[] {
