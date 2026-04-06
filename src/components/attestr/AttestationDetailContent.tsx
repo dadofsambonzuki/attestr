@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useTrustedAttestorsForKind } from '@/hooks/useTrustedAttestorsForKind';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import { parseAttestation, toUnixTimestamp, type AttestationStatus } from '@/lib/attestation';
@@ -46,6 +47,14 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
   const attestorAvatar = attestor.data?.metadata?.picture;
   const { user } = useCurrentUser();
   const { mutateAsync: publishEvent, isPending } = useNostrPublish();
+
+  const assertionKind = assertion?.kind;
+  const trustedAttestorsQuery = useTrustedAttestorsForKind(user?.pubkey, assertionKind);
+  const isTrustedForAssertionKind = Boolean(
+    user?.pubkey &&
+    assertionKind !== undefined &&
+    trustedAttestorsQuery.data?.includes(attestation.pubkey),
+  );
   const { toast } = useToast();
 
   const canUpdate = user?.pubkey === attestation.pubkey && !!parsed.d;
@@ -159,6 +168,9 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
             </a>
           </div>
           <p className="break-all font-mono text-xs text-muted-foreground">{attestorNpub}</p>
+          {isTrustedForAssertionKind ? (
+            <Badge className="w-fit bg-emerald-600 text-white hover:bg-emerald-600">Trusted for this assertion kind</Badge>
+          ) : null}
         </div>
         <div className="space-y-2">
           <div className="grid gap-2 sm:grid-cols-3">

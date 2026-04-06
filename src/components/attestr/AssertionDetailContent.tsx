@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 import { useAuthor } from '@/hooks/useAuthor';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useTrustedAttestorsForKind } from '@/hooks/useTrustedAttestorsForKind';
 import { encodeEventPointer, encodeNpub, getProfilePath } from '@/lib/nostrEncodings';
 import { formatKind } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
@@ -32,6 +34,11 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
   const author = useAuthor(assertion.pubkey);
   const authorName = getNostrDisplayName(author.data?.metadata, assertion.pubkey);
   const authorAvatar = author.data?.metadata?.picture;
+  const { user } = useCurrentUser();
+
+  const trustedAttestorsQuery = useTrustedAttestorsForKind(user?.pubkey, assertion.kind);
+  const trustedAttestors = trustedAttestorsQuery.data ?? [];
+  const trustedAttestorsSet = new Set(trustedAttestors);
 
   const associatedAttestationsQuery = useQuery({
     queryKey: ['nostr', 'assertion-associated-attestations', assertion.id],
@@ -134,7 +141,11 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
         ) : (
           <div className="space-y-2">
             {associatedAttestations.map((attestation) => (
-              <AssociatedAttestationRow key={attestation.id} attestation={attestation} />
+              <AssociatedAttestationRow
+                key={attestation.id}
+                attestation={attestation}
+                isTrusted={trustedAttestorsSet.has(attestation.pubkey)}
+              />
             ))}
           </div>
         )}
@@ -157,7 +168,13 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
   );
 }
 
-function AssociatedAttestationRow({ attestation }: { attestation: NostrEvent }) {
+function AssociatedAttestationRow({
+  attestation,
+  isTrusted,
+}: {
+  attestation: NostrEvent;
+  isTrusted: boolean;
+}) {
   const attestor = useAuthor(attestation.pubkey);
   const attestorName = getNostrDisplayName(attestor.data?.metadata, attestation.pubkey);
   const attestorAvatar = attestor.data?.metadata?.picture;
@@ -178,8 +195,11 @@ function AssociatedAttestationRow({ attestation }: { attestation: NostrEvent }) 
         </div>
         <span className="text-xs text-muted-foreground">{new Date(attestation.created_at * 1000).toLocaleString()}</span>
       </div>
-      <div className="mt-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <AttestationStatusBadge status={parsed.status} />
+        {isTrusted ? (
+          <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">Trusted for this kind</Badge>
+        ) : null}
       </div>
     </Link>
   );
