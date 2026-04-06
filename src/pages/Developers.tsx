@@ -102,6 +102,21 @@ export default function Developers() {
                 />
                 <span className="font-medium text-slate-900">Nostria</span>
               </a>
+
+              <a
+                href="https://walletscrutiny.com/"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
+              >
+                <img
+                  src="https://walletscrutiny.com/favicon.ico"
+                  alt="WalletScrutiny logo"
+                  className="h-6 w-6 rounded-sm"
+                  loading="lazy"
+                />
+                <span className="font-medium text-slate-900">WalletScrutiny</span>
+              </a>
             </div>
           </CardContent>
         </Card>

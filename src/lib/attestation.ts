@@ -98,7 +98,9 @@ export function parseAttestation(event: NostrEvent): ParsedAttestation {
   const assertionRef = parseAssertionRef(event);
 
   return {
-    status: isAttestationStatus(statusTag) ? statusTag : undefined,
+    // Some clients publish attestations without an explicit status tag.
+    // For compatibility, assume "valid" when missing or malformed.
+    status: isAttestationStatus(statusTag) ? statusTag : 'valid',
     validFrom,
     validTo,
     expiration,
