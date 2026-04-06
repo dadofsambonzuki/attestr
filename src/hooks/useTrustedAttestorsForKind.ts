@@ -10,6 +10,12 @@ import {
 } from '@/lib/attestation';
 import type { NostrEvent } from '@nostrify/nostrify';
 
+export interface TrustedAttestorTrustReason {
+  attestorPubkey: string;
+  viaDirectList: boolean;
+  providerPubkeys: string[];
+}
+
 function newestReplaceable(events: NostrEvent[]): NostrEvent | undefined {
   return events.sort((a, b) => b.created_at - a.created_at)[0];
 }
@@ -21,7 +27,7 @@ export function useTrustedAttestorsForKind(subjectPubkey?: string, assertionKind
     queryKey: ['nostr', 'trusted-attestors-for-kind', subjectPubkey ?? '', assertionKind ?? -1],
     enabled: Boolean(subjectPubkey && Number.isFinite(assertionKind)),
     queryFn: async () => {
-      if (!subjectPubkey || !Number.isFinite(assertionKind)) return [] as string[];
+      if (!subjectPubkey || !Number.isFinite(assertionKind)) return [] as TrustedAttestorTrustReason[];
 
       // Latest kind 10040 event from the subject defines current provider delegations.
       const delegationEvents = await nostr.query([
@@ -44,7 +50,19 @@ export function useTrustedAttestorsForKind(subjectPubkey?: string, assertionKind
         delegatedProviderPolicies.set(delegation.providerPubkey, existing);
       }
 
-      const trustedAttestors = new Set<string>();
+      const trustMap = new Map<string, { viaDirectList: boolean; providerPubkeys: Set<string> }>();
+
+      const addDirectTrust = (attestorPubkey: string) => {
+        const current = trustMap.get(attestorPubkey) ?? { viaDirectList: false, providerPubkeys: new Set<string>() };
+        current.viaDirectList = true;
+        trustMap.set(attestorPubkey, current);
+      };
+
+      const addDelegatedTrust = (attestorPubkey: string, providerPubkey: string) => {
+        const current = trustMap.get(attestorPubkey) ?? { viaDirectList: false, providerPubkeys: new Set<string>() };
+        current.providerPubkeys.add(providerPubkey);
+        trustMap.set(attestorPubkey, current);
+      };
 
       // Direct trust lists authored by the subject.
       const directListEvents = await nostr.query([
@@ -59,7 +77,7 @@ export function useTrustedAttestorsForKind(subjectPubkey?: string, assertionKind
         const parsed = parseTrustedAttestors(event);
         if (parsed.isProviderOutput) continue;
         if (!parsed.kinds.includes(assertionKind)) continue;
-        for (const attestor of parsed.attestors) trustedAttestors.add(attestor);
+        for (const attestor of parsed.attestors) addDirectTrust(attestor);
       }
 
       // Provider-generated trust lists for this subject, constrained by subject's own kind10040 delegations.
@@ -82,11 +100,17 @@ export function useTrustedAttestorsForKind(subjectPubkey?: string, assertionKind
           const allowedListKinds = delegatedProviderPolicies.get(event.pubkey);
           if (!allowedListKinds || !allowedListKinds.has(event.kind)) continue;
 
-          for (const attestor of parsed.attestors) trustedAttestors.add(attestor);
+          for (const attestor of parsed.attestors) addDelegatedTrust(attestor, event.pubkey);
         }
       }
 
-      return [...trustedAttestors].sort((a, b) => a.localeCompare(b));
+      return [...trustMap.entries()]
+        .map(([attestorPubkey, reason]) => ({
+          attestorPubkey,
+          viaDirectList: reason.viaDirectList,
+          providerPubkeys: [...reason.providerPubkeys].sort((a, b) => a.localeCompare(b)),
+        }))
+        .sort((a, b) => a.attestorPubkey.localeCompare(b.attestorPubkey));
     },
   });
 }

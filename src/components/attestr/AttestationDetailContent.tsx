@@ -23,6 +23,7 @@ import { AttestationZapStats } from './AttestationZapStats';
 import { ATTESTATION_STATUS_DESCRIPTIONS } from '@/lib/attestation';
 import { AttestationStatusLabel } from './AttestationStatusBadge';
 import { EventDeletionRequestButton } from './EventDeletionRequestButton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AttestationDetailContentProps {
   attestation: NostrEvent;
@@ -50,11 +51,8 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
 
   const assertionKind = assertion?.kind;
   const trustedAttestorsQuery = useTrustedAttestorsForKind(user?.pubkey, assertionKind);
-  const isTrustedForAssertionKind = Boolean(
-    user?.pubkey &&
-    assertionKind !== undefined &&
-    trustedAttestorsQuery.data?.includes(attestation.pubkey),
-  );
+  const trustReason = trustedAttestorsQuery.data?.find((entry) => entry.attestorPubkey === attestation.pubkey);
+  const isTrustedForAssertionKind = Boolean(trustReason);
   const { toast } = useToast();
 
   const canUpdate = user?.pubkey === attestation.pubkey && !!parsed.d;
@@ -169,7 +167,26 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
           </div>
           <p className="break-all font-mono text-xs text-muted-foreground">{attestorNpub}</p>
           {isTrustedForAssertionKind ? (
-            <Badge className="w-fit bg-emerald-600 text-white hover:bg-emerald-600">Trusted for this assertion kind</Badge>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge className="w-fit cursor-help bg-emerald-600 text-white hover:bg-emerald-600">Trusted for this assertion kind</Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="space-y-1 text-xs">
+                    {trustReason?.viaDirectList ? <p>Direct trusted list</p> : null}
+                    {trustReason && trustReason.providerPubkeys.length > 0 ? (
+                      <div>
+                        <p>Delegated provider{trustReason.providerPubkeys.length > 1 ? 's' : ''}:</p>
+                        {trustReason.providerPubkeys.map((providerPubkey) => (
+                          <p key={providerPubkey} className="font-mono text-[11px]">{providerPubkey}</p>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ) : null}
         </div>
         <div className="space-y-2">

@@ -20,6 +20,7 @@ import { RequestAssertionDialog } from './RequestAssertionDialog';
 import { ATTESTATION_KIND, createAssertionTag, parseAttestation } from '@/lib/attestation';
 import { AttestationStatusBadge } from './AttestationStatusBadge';
 import { EventDeletionRequestButton } from './EventDeletionRequestButton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AssertionDetailContentProps {
   assertion: NostrEvent;
@@ -38,7 +39,7 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
 
   const trustedAttestorsQuery = useTrustedAttestorsForKind(user?.pubkey, assertion.kind);
   const trustedAttestors = trustedAttestorsQuery.data ?? [];
-  const trustedAttestorsSet = new Set(trustedAttestors);
+  const trustedAttestorReasons = new Map(trustedAttestors.map((entry) => [entry.attestorPubkey, entry]));
 
   const associatedAttestationsQuery = useQuery({
     queryKey: ['nostr', 'assertion-associated-attestations', assertion.id],
@@ -144,7 +145,7 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
               <AssociatedAttestationRow
                 key={attestation.id}
                 attestation={attestation}
-                isTrusted={trustedAttestorsSet.has(attestation.pubkey)}
+                trustReason={trustedAttestorReasons.get(attestation.pubkey)}
               />
             ))}
           </div>
@@ -170,10 +171,14 @@ export function AssertionDetailContent({ assertion }: AssertionDetailContentProp
 
 function AssociatedAttestationRow({
   attestation,
-  isTrusted,
+  trustReason,
 }: {
   attestation: NostrEvent;
-  isTrusted: boolean;
+  trustReason?: {
+    attestorPubkey: string;
+    viaDirectList: boolean;
+    providerPubkeys: string[];
+  };
 }) {
   const attestor = useAuthor(attestation.pubkey);
   const attestorName = getNostrDisplayName(attestor.data?.metadata, attestation.pubkey);
@@ -197,8 +202,27 @@ function AssociatedAttestationRow({
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <AttestationStatusBadge status={parsed.status} />
-        {isTrusted ? (
-          <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">Trusted for this kind</Badge>
+        {trustReason ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge className="cursor-help bg-emerald-600 text-white hover:bg-emerald-600">Trusted for this kind</Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="space-y-1 text-xs">
+                  {trustReason.viaDirectList ? <p>Direct trusted list</p> : null}
+                  {trustReason.providerPubkeys.length > 0 ? (
+                    <div>
+                      <p>Delegated provider{trustReason.providerPubkeys.length > 1 ? 's' : ''}:</p>
+                      {trustReason.providerPubkeys.map((providerPubkey) => (
+                        <p key={providerPubkey} className="font-mono text-[11px]">{providerPubkey}</p>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         ) : null}
       </div>
     </Link>
