@@ -110,7 +110,7 @@ export default function Developers() {
                 className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
               >
                 <img
-                  src="https://walletscrutiny.com/favicon.ico"
+                  src="https://walletscrutiny.com/images/favicon-32x32.png"
                   alt="WalletScrutiny logo"
                   className="h-6 w-6 rounded-sm"
                   loading="lazy"
