@@ -108,7 +108,14 @@ export function parseAttestation(event: NostrEvent): ParsedAttestation {
   const assertionRef = parseAssertionRef(event);
 
   return {
-    status: isAttestationStatus(statusTag) ? statusTag : undefined,
+    // Some clients publish attestations without an explicit status tag.
+    // For compatibility, assume "valid" when the status tag is missing.
+    // Keep malformed statuses as undefined (do not coerce them to valid).
+    status: statusTag === undefined
+      ? 'valid'
+      : isAttestationStatus(statusTag)
+        ? statusTag
+        : undefined,
     validFrom,
     validTo,
     expiration,
