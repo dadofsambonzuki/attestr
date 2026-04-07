@@ -27,6 +27,7 @@ import {
   parseAttestationRequest,
   parseAttestorProficiencyDeclaration,
   parseAttestorRecommendation,
+  parseTrustedAttestor,
   parseTrustedServiceProviderDelegations,
 } from '@/lib/attestation';
 import { formatKind, getKindName } from '@/lib/nostrKinds';
@@ -138,7 +139,9 @@ export default function Profile() {
         },
       ], { signal: AbortSignal.timeout(6000) });
 
-      return groupLatestRecommendationsByAuthorAndTarget(events).sort((a, b) => b.created_at - a.created_at);
+      return groupLatestRecommendationsByAuthorAndTarget(events)
+        .filter((event) => !isSelfDeclarationRecommendation(event))
+        .sort((a, b) => b.created_at - a.created_at);
     },
     enabled: !!pubkey,
   });
@@ -162,7 +165,9 @@ export default function Profile() {
         },
       ], { signal: AbortSignal.timeout(6000) });
 
-      return groupLatestRecommendationsByAuthorAndTarget(events).sort((a, b) => b.created_at - a.created_at);
+      return groupLatestRecommendationsByAuthorAndTarget(events)
+        .filter((event) => !isSelfDeclarationRecommendation(event))
+        .sort((a, b) => b.created_at - a.created_at);
     },
     enabled: !!pubkey,
   });
@@ -1081,4 +1086,11 @@ function selectNewestEventPreferTrustedList(events: NostrEvent[]): NostrEvent | 
     }
     return selected;
   });
+}
+
+function isSelfDeclarationRecommendation(event: NostrEvent): boolean {
+  if (event.kind !== TRUSTED_LISTS_KIND) return false;
+
+  const parsed = parseTrustedAttestor(event);
+  return Boolean(parsed.targetPubkey && parsed.targetPubkey === event.pubkey);
 }
