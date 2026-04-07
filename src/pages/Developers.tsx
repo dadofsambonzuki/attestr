@@ -5,14 +5,19 @@ import { AppHeader } from '@/components/AppHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ATTESTATION_KIND } from '@/lib/attestation';
+import {
+  ATTESTATION_KIND,
+  ATTESTOR_PROFICIENCY_DECLARATION_KIND,
+  ATTESTOR_RECOMMENDATION_KIND,
+  TRUSTED_LISTS_KIND,
+} from '@/lib/attestation';
 import { formatKind } from '@/lib/nostrKinds';
 
 const attestationNipUrl = 'https://nostrhub.io/naddr1qvzqqqrcvypzp384u7n44r8rdq74988lqcmggww998jjg0rtzfd6dpufrxy9djk8qyfhwumn8ghj7un9d3shjtnyv9ujuct89uqqcct5w3jhxarpw35k7mnnaawl4h';
 const githubRepoUrl = 'https://github.com/dadofsambonzuki/attestr';
 
 export default function Developers() {
-  const attestationKinds = [ATTESTATION_KIND, 31872, 31873, 11871];
+  const LEGACY_TRUSTED_ATTESTORS_KIND = 31874;
 
   useSeoMeta({
     title: 'Attestr',
@@ -25,14 +30,7 @@ export default function Developers() {
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <section className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm sm:p-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <Badge variant="secondary">Developers</Badge>
-            {attestationKinds.map((kind) => (
-              <Badge key={kind}>{formatKind(kind)}</Badge>
-            ))}
-          </div>
-
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Build with Attestations</h1>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Build with Attestations</h1>
           <p className="mt-3 max-w-3xl text-base text-slate-700 sm:text-lg">
             Attestations are Nostr events that reference another event and add lifecycle status, optional validity
             windows, and optional notes. Use them to express trust judgments and let clients render verifiable context.
@@ -128,7 +126,11 @@ export default function Developers() {
                 <Send className="h-5 w-5" />
                 Publish an Attestation
               </CardTitle>
-              <CardDescription>{formatKind(31871)}</CardDescription>
+              <CardDescription>
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary">{formatKind(ATTESTATION_KIND)}</Badge>
+                </span>
+              </CardDescription>
             </CardHeader>
             <CardContent className="min-w-0 space-y-3 text-sm text-slate-700">
               <p>Use {formatKind(ATTESTATION_KIND)} and include the minimum tags for reference and status.</p>
@@ -161,7 +163,11 @@ export default function Developers() {
                 <FileSearch className="h-5 w-5" />
                 Attestation Request
               </CardTitle>
-              <CardDescription>{formatKind(31872)}</CardDescription>
+              <CardDescription>
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary">{formatKind(31872)}</Badge>
+                </span>
+              </CardDescription>
             </CardHeader>
             <CardContent className="min-w-0 space-y-3 text-sm text-slate-700">
               <p>Use {formatKind(31872)} to request an attestation from one or more attestors for a specific assertion.</p>
@@ -189,23 +195,64 @@ export default function Developers() {
                 <Code2 className="h-5 w-5" />
                 Attestor Recommendation
               </CardTitle>
-              <CardDescription>{formatKind(31873)}</CardDescription>
+              <CardDescription>
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary">{formatKind(TRUSTED_LISTS_KIND)} + t=trusted-attestor</Badge>
+                  <Badge variant="outline">{formatKind(ATTESTOR_RECOMMENDATION_KIND)}</Badge>
+                </span>
+              </CardDescription>
             </CardHeader>
             <CardContent className="min-w-0 space-y-3 text-sm text-slate-700">
-              <p>Use {formatKind(31873)} to recommend an attestor for specific event kinds.</p>
+              <p>Use a trusted-attestor relation to recommend an attestor for specific assertion kinds.</p>
               <ul className="list-disc space-y-1 pl-5">
-                <li>Use <code className="font-mono text-xs">d</code> as <code className="font-mono text-xs">&lt;attestor-pubkey&gt;&lt;recommendation-id&gt;</code>.</li>
-                <li>Include <code className="font-mono text-xs">p</code> with the recommended attestor pubkey.</li>
-                <li>Add one or more <code className="font-mono text-xs">k</code> tags for supported kinds.</li>
+                <li><strong>Legacy:</strong> <code className="font-mono text-xs">k</code> tags on kind <code className="font-mono text-xs">{ATTESTOR_RECOMMENDATION_KIND}</code>.</li>
+                <li><strong>Current:</strong> kind <code className="font-mono text-xs">{TRUSTED_LISTS_KIND}</code> with <code className="font-mono text-xs">t=trusted-attestor</code>, <code className="font-mono text-xs">p=&lt;attestor&gt;</code>, and <code className="font-mono text-xs">t=k:&lt;kind&gt;</code>.</li>
               </ul>
                <pre className="w-full max-w-full overflow-x-auto rounded-md border bg-slate-50 p-3 text-[11px] text-slate-800 sm:text-xs">
-{`createEvent({
-  kind: 31873,
+{`// Current trusted-list form
+createEvent({
+  kind: ${TRUSTED_LISTS_KIND},
   tags: [
-    ['d', '<attestor-pubkey><recommendation-id>'],
+    ['d', 'trusted-attestor:<attestor-pubkey>'],
+    ['t', 'trusted-attestor'],
     ['p', '<attestor-pubkey>'],
-    ['k', '1'],
-    ['k', '30023']
+    ['t', 'k:1'],
+    ['t', 'k:30023']
+  ],
+  content: ''
+});`}
+              </pre>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <FileSearch className="h-5 w-5" />
+                Trusted Attestors List
+              </CardTitle>
+              <CardDescription>
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary">{formatKind(TRUSTED_LISTS_KIND)} + t=trusted-attestors</Badge>
+                  <Badge variant="outline">{formatKind(LEGACY_TRUSTED_ATTESTORS_KIND)}</Badge>
+                </span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="min-w-0 space-y-3 text-sm text-slate-700">
+              <p>Use trusted-attestors lists to publish multiple approved attestors for one assertion kind.</p>
+              <ul className="list-disc space-y-1 pl-5">
+                <li><strong>Legacy:</strong> kind <code className="font-mono text-xs">{LEGACY_TRUSTED_ATTESTORS_KIND}</code> with <code className="font-mono text-xs">k</code> and repeatable <code className="font-mono text-xs">p</code>.</li>
+                <li><strong>Current:</strong> kind <code className="font-mono text-xs">{TRUSTED_LISTS_KIND}</code> with <code className="font-mono text-xs">t=trusted-attestors</code>, <code className="font-mono text-xs">t=k:&lt;kind&gt;</code>, and repeatable <code className="font-mono text-xs">p</code>.</li>
+              </ul>
+              <pre className="w-full max-w-full overflow-x-auto rounded-md border bg-slate-50 p-3 text-[11px] text-slate-800 sm:text-xs">
+{`createEvent({
+  kind: ${TRUSTED_LISTS_KIND},
+  tags: [
+    ['d', 'trusted-attestors:1'],
+    ['t', 'trusted-attestors'],
+    ['t', 'k:1'],
+    ['p', '<attestor-pubkey-1>'],
+    ['p', '<attestor-pubkey-2>']
   ],
   content: ''
 });`}
@@ -219,19 +266,28 @@ export default function Developers() {
                 <ExternalLink className="h-5 w-5" />
                 Proficiency Declaration
               </CardTitle>
-              <CardDescription>{formatKind(11871)}</CardDescription>
+              <CardDescription>
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary">{formatKind(TRUSTED_LISTS_KIND)} + self trusted-attestor</Badge>
+                  <Badge variant="outline">{formatKind(ATTESTOR_PROFICIENCY_DECLARATION_KIND)}</Badge>
+                </span>
+              </CardDescription>
             </CardHeader>
             <CardContent className="min-w-0 space-y-3 text-sm text-slate-700">
-              <p>Use replaceable {formatKind(11871)} to declare which event kinds an attestor can verify.</p>
+              <p>Declare which event kinds an attestor can verify (self-claim format).</p>
               <ul className="list-disc space-y-1 pl-5">
-                <li>Include one or more <code className="font-mono text-xs">k</code> tags for supported kinds.</li>
+                <li><strong>Legacy:</strong> replaceable kind <code className="font-mono text-xs">{ATTESTOR_PROFICIENCY_DECLARATION_KIND}</code> with <code className="font-mono text-xs">k</code> tags.</li>
+                <li><strong>Current:</strong> kind <code className="font-mono text-xs">{TRUSTED_LISTS_KIND}</code>, <code className="font-mono text-xs">t=trusted-attestor</code>, <code className="font-mono text-xs">p=&lt;author-pubkey&gt;</code>, and <code className="font-mono text-xs">t=k:&lt;kind&gt;</code>.</li>
               </ul>
                <pre className="w-full max-w-full overflow-x-auto rounded-md border bg-slate-50 p-3 text-[11px] text-slate-800 sm:text-xs">
 {`createEvent({
-  kind: 11871,
+  kind: ${TRUSTED_LISTS_KIND},
   tags: [
-    ['k', '1'],
-    ['k', '30023']
+    ['d', 'trusted-attestor:<author-pubkey>'],
+    ['t', 'trusted-attestor'],
+    ['p', '<author-pubkey>'],
+    ['t', 'k:1'],
+    ['t', 'k:30023']
   ],
   content: ''
 });`}
