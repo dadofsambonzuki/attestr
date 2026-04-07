@@ -446,7 +446,7 @@ export default function Profile() {
 
         <Card className="border-slate-200 bg-white/90 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-            <CardTitle>Trusted Service Providers (NIP-85 kind 10040)</CardTitle>
+            <CardTitle>Trusted Service Providers</CardTitle>
             {isOwnProfile ? (
               <TrustedServiceProviderDelegationDialog
                 existing={providerDelegations}
@@ -470,16 +470,12 @@ export default function Profile() {
                 </p>
                 <div className="space-y-2">
                   {trustedProviderDelegations.map((delegation) => (
-                    <div key={`${delegation.listKind}:${delegation.assertionKind}:${delegation.providerPubkey}`} className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">List {delegation.listKind}</Badge>
-                        <Badge variant="outline">Kind {delegation.assertionKind}</Badge>
-                      </div>
-                      <p className="mt-2 break-all font-mono text-xs text-slate-700">Provider: {delegation.providerPubkey}</p>
-                      {delegation.relayHint ? (
-                        <p className="mt-1 break-all text-xs text-muted-foreground">Relay: {delegation.relayHint}</p>
-                      ) : null}
-                    </div>
+                    <ProviderDelegationCard
+                      key={`${delegation.listKind}:${delegation.assertionKind}:${delegation.providerPubkey}`}
+                      providerPubkey={delegation.providerPubkey}
+                      assertionKind={delegation.assertionKind}
+                      relayHint={delegation.relayHint}
+                    />
                   ))}
                 </div>
               </>
@@ -698,6 +694,42 @@ export default function Profile() {
           </Card>
         </section>
       </main>
+    </div>
+  );
+}
+
+function ProviderDelegationCard({
+  providerPubkey,
+  assertionKind,
+  relayHint,
+}: {
+  providerPubkey: string;
+  assertionKind: number;
+  relayHint?: string;
+}) {
+  const provider = useAuthor(providerPubkey);
+  const providerName = getNostrDisplayName(provider.data?.metadata, providerPubkey);
+  const providerAvatar = provider.data?.metadata?.picture;
+
+  return (
+    <div className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Avatar className="h-6 w-6 border border-slate-200">
+            <AvatarImage src={providerAvatar} alt={providerName} />
+            <AvatarFallback className="text-[9px]">{providerName.slice(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <a href={getProfilePath(providerPubkey)} className="truncate text-xs font-medium text-slate-800 hover:underline">
+            {providerName}
+          </a>
+        </div>
+        <Badge variant="outline">{formatKind(assertionKind)}</Badge>
+      </div>
+
+      <p className="mt-2 break-all font-mono text-[11px] text-muted-foreground">{encodeNpub(providerPubkey)}</p>
+      {relayHint ? (
+        <p className="mt-1 break-all text-xs text-muted-foreground">Relay: {relayHint}</p>
+      ) : null}
     </div>
   );
 }
