@@ -115,6 +115,15 @@ export function parseAttestationRequest(event: NostrEvent): ParsedAttestationReq
 }
 
 export function parseAttestorRecommendation(event: NostrEvent): ParsedAttestorRecommendation {
+  if (event.kind === TRUSTED_LISTS_KIND) {
+    const parsed = parseTrustedAttestor(event);
+    return {
+      d: parsed.d,
+      recommendedAttestor: parsed.targetPubkey,
+      kinds: parsed.kinds,
+    };
+  }
+
   return {
     d: getTagValue(event, 'd'),
     recommendedAttestor: getTagValue(event, 'p'),
@@ -123,6 +132,12 @@ export function parseAttestorRecommendation(event: NostrEvent): ParsedAttestorRe
 }
 
 export function parseAttestorProficiencyDeclaration(event: NostrEvent): ParsedAttestorProficiencyDeclaration {
+  if (event.kind === TRUSTED_LISTS_KIND) {
+    return {
+      kinds: parseTrustedListKindTags(event),
+    };
+  }
+
   return {
     kinds: parseKindTags(event),
   };
@@ -263,7 +278,7 @@ export function buildTrustedAttestorEvent(
   authorPubkey: string,
   targetPubkey: string,
   kinds: number[],
-  isSelfDeclaration: boolean = false,
+  _isSelfDeclaration: boolean = false,
 ): NostrEvent {
   const d = buildTrustedAttestorD(targetPubkey);
   const tags: string[][] = [

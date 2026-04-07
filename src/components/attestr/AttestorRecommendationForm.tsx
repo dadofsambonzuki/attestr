@@ -6,7 +6,7 @@ import { LoginArea } from '@/components/auth/LoginArea';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
-import { ATTESTOR_RECOMMENDATION_KIND, createAttestorRecommendationD } from '@/lib/attestation';
+import { buildDualWriteAttestorRecommendation } from '@/lib/attestation';
 import { KindTagSelector } from './KindTagSelector';
 import { SignerMismatchWarning } from '@/components/SignerMismatchWarning';
 
@@ -33,23 +33,22 @@ export function AttestorRecommendationForm({
   const handlePublish = async () => {
     if (!canSubmit || !user) return;
 
-    const d = createAttestorRecommendationD(user.pubkey, recommendedAttestorPubkey);
-    const tags: string[][] = [
-      ['d', d],
-      ['p', recommendedAttestorPubkey],
-      ...selectedKinds.map((kind) => ['k', String(kind)]),
-    ];
+    const eventsToPublish = buildDualWriteAttestorRecommendation(
+      user.pubkey,
+      recommendedAttestorPubkey,
+      selectedKinds,
+    );
 
     try {
-      await publishEvent({
-        kind: ATTESTOR_RECOMMENDATION_KIND,
-        tags,
-        content: '',
-      });
+      await Promise.all(eventsToPublish.map((event) => publishEvent({
+        kind: event.kind,
+        tags: event.tags,
+        content: event.content,
+      })));
 
       toast({
         title: 'Recommendation published',
-        description: 'Your attestor recommendation is now on relays.',
+        description: 'Your attestor recommendation is now on relays (legacy + trusted list).',
       });
       setSelectedKinds([]);
       onPublished?.();

@@ -8,7 +8,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import {
-  ATTESTOR_PROFICIENCY_DECLARATION_KIND,
+  buildDualWriteAttestorProficiency,
   parseAttestorProficiencyDeclaration,
 } from '@/lib/attestation';
 import { KindTagSelector } from './KindTagSelector';
@@ -35,20 +35,20 @@ export function ProficiencyDeclarationForm({ existing, onPublished, embedded = f
   const canSubmit = Boolean(user && selectedKinds.length > 0);
 
   const handlePublish = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || !user) return;
 
-    const tags: string[][] = selectedKinds.map((kind) => ['k', String(kind)]);
+    const eventsToPublish = buildDualWriteAttestorProficiency(user.pubkey, selectedKinds);
 
     try {
-      await publishEvent({
-        kind: ATTESTOR_PROFICIENCY_DECLARATION_KIND,
-        tags,
-        content: '',
-      });
+      await Promise.all(eventsToPublish.map((event) => publishEvent({
+        kind: event.kind,
+        tags: event.tags,
+        content: event.content,
+      })));
 
       toast({
         title: 'Proficiency declaration saved',
-        description: 'Your replaceable declaration is published on relays.',
+        description: 'Your declaration is published on relays (legacy + trusted list).',
       });
       onPublished?.();
     } catch (error) {

@@ -19,6 +19,8 @@ import {
   ATTESTATION_REQUEST_KIND,
   ATTESTOR_PROFICIENCY_DECLARATION_KIND,
   ATTESTOR_RECOMMENDATION_KIND,
+  TRUSTED_LISTS_KIND,
+  TL_TAG_TRUSTED_ATTESTOR,
   parseAddressCoordinate,
   parseAttestation,
   parseAttestationRequest,
@@ -124,9 +126,15 @@ export default function Profile() {
           '#p': [pubkey],
           limit: 100,
         },
+        {
+          kinds: [TRUSTED_LISTS_KIND],
+          '#p': [pubkey],
+          '#t': [TL_TAG_TRUSTED_ATTESTOR, 'attestor-recommendation'],
+          limit: 100,
+        },
       ], { signal: AbortSignal.timeout(6000) });
 
-      return groupLatestByPubkeyAndD(events).sort((a, b) => b.created_at - a.created_at);
+      return groupLatestRecommendationsByAuthorAndTarget(events).sort((a, b) => b.created_at - a.created_at);
     },
     enabled: !!pubkey,
   });
@@ -142,9 +150,15 @@ export default function Profile() {
           authors: [pubkey],
           limit: 100,
         },
+        {
+          kinds: [TRUSTED_LISTS_KIND],
+          authors: [pubkey],
+          '#t': [TL_TAG_TRUSTED_ATTESTOR, 'attestor-recommendation'],
+          limit: 100,
+        },
       ], { signal: AbortSignal.timeout(6000) });
 
-      return groupLatestByPubkeyAndD(events).sort((a, b) => b.created_at - a.created_at);
+      return groupLatestRecommendationsByAuthorAndTarget(events).sort((a, b) => b.created_at - a.created_at);
     },
     enabled: !!pubkey,
   });
@@ -160,9 +174,16 @@ export default function Profile() {
           authors: [pubkey],
           limit: 20,
         },
+        {
+          kinds: [TRUSTED_LISTS_KIND],
+          authors: [pubkey],
+          '#p': [pubkey],
+          '#t': [TL_TAG_TRUSTED_ATTESTOR, 'attestor-proficiency'],
+          limit: 20,
+        },
       ], { signal: AbortSignal.timeout(6000) });
 
-      return events.sort((a, b) => b.created_at - a.created_at)[0];
+      return selectNewestEventPreferTrustedList(events);
     },
     enabled: !!pubkey,
   });
@@ -913,4 +934,44 @@ function groupLatestByPubkeyAndD(events: NostrEvent[]): NostrEvent[] {
   }
 
   return [...byKey.values()];
+}
+
+function groupLatestRecommendationsByAuthorAndTarget(events: NostrEvent[]): NostrEvent[] {
+  const byKey = new Map<string, NostrEvent>();
+
+  for (const event of events) {
+    const parsed = parseAttestorRecommendation(event);
+    const target = parsed.recommendedAttestor;
+    if (!target) continue;
+
+    const key = `${event.pubkey}:${target}`;
+    const previous = byKey.get(key);
+    if (!previous) {
+      byKey.set(key, event);
+      continue;
+    }
+
+    if (event.created_at > previous.created_at) {
+      byKey.set(key, event);
+      continue;
+    }
+
+    if (event.created_at === previous.created_at && event.kind === TRUSTED_LISTS_KIND && previous.kind !== TRUSTED_LISTS_KIND) {
+      byKey.set(key, event);
+    }
+  }
+
+  return [...byKey.values()];
+}
+
+function selectNewestEventPreferTrustedList(events: NostrEvent[]): NostrEvent | undefined {
+  if (events.length === 0) return undefined;
+
+  return events.reduce((selected, candidate) => {
+    if (candidate.created_at > selected.created_at) return candidate;
+    if (candidate.created_at === selected.created_at && candidate.kind === TRUSTED_LISTS_KIND && selected.kind !== TRUSTED_LISTS_KIND) {
+      return candidate;
+    }
+    return selected;
+  });
 }

@@ -33,7 +33,7 @@ export function ProficiencyDeclarationDialog({
         <DialogHeader>
           <DialogTitle>Edit proficiency declaration</DialogTitle>
           <DialogDescription>
-            Publish your replaceable attestor proficiency declaration (kind 11871).
+            Publish your proficiency declaration in both legacy and trusted-list formats.
           </DialogDescription>
         </DialogHeader>
 
