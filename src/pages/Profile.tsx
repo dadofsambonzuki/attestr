@@ -19,6 +19,7 @@ import {
   ATTESTATION_REQUEST_KIND,
   ATTESTOR_PROFICIENCY_DECLARATION_KIND,
   ATTESTOR_RECOMMENDATION_KIND,
+  TRUSTED_SERVICE_PROVIDERS_KIND,
   TRUSTED_LISTS_KIND,
   TL_TAG_TRUSTED_ATTESTOR,
   parseAddressCoordinate,
@@ -26,6 +27,7 @@ import {
   parseAttestationRequest,
   parseAttestorProficiencyDeclaration,
   parseAttestorRecommendation,
+  parseTrustedServiceProviderDelegations,
 } from '@/lib/attestation';
 import { formatKind, getKindName } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
@@ -33,6 +35,7 @@ import { encodeEventPointer, encodeNpub, getProfilePath } from '@/lib/nostrEncod
 import { normalizeToPubkey } from '@/lib/nostrIdentity';
 import { AttestorRecommendationDialog } from '@/components/attestr/AttestorRecommendationDialog';
 import { ProficiencyDeclarationDialog } from '@/components/attestr/ProficiencyDeclarationDialog';
+import { TrustedServiceProviderDelegationDialog } from '@/components/attestr/TrustedServiceProviderDelegationDialog';
 import { AssertionDetailDialog } from '@/components/attestr/AssertionDetailDialog';
 import { AttestationRequestDetailDialog } from '@/components/attestr/AttestationRequestDetailDialog';
 import { AttestorRecommendationDetailDialog } from '@/components/attestr/AttestorRecommendationDetailDialog';
@@ -59,6 +62,7 @@ export default function Profile() {
   const { user } = useCurrentUser();
   const [recommendDialogOpen, setRecommendDialogOpen] = useState(false);
   const [proficiencyDialogOpen, setProficiencyDialogOpen] = useState(false);
+  const [providerDelegationDialogOpen, setProviderDelegationDialogOpen] = useState(false);
 
   const author = useAuthor(pubkey ?? undefined);
   const isOwnProfile = Boolean(user?.pubkey && pubkey && user.pubkey === pubkey);
@@ -188,6 +192,24 @@ export default function Profile() {
     enabled: !!pubkey,
   });
 
+  const providerDelegationsQuery = useQuery({
+    queryKey: ['nostr', 'profile-provider-delegations', pubkey ?? ''],
+    queryFn: async () => {
+      if (!pubkey) return undefined;
+
+      const events = await nostr.query([
+        {
+          kinds: [TRUSTED_SERVICE_PROVIDERS_KIND],
+          authors: [pubkey],
+          limit: 20,
+        },
+      ], { signal: AbortSignal.timeout(6000) });
+
+      return events.sort((a, b) => b.created_at - a.created_at)[0];
+    },
+    enabled: !!pubkey,
+  });
+
   const receivedAttestationsQuery = useQuery({
     queryKey: ['nostr', 'profile-received-attestations', pubkey ?? ''],
     queryFn: async () => {
@@ -209,6 +231,7 @@ export default function Profile() {
   const recommendationsTo = useMemo(() => recommendationsToQuery.data ?? [], [recommendationsToQuery.data]);
   const recommendationsFrom = useMemo(() => recommendationsFromQuery.data ?? [], [recommendationsFromQuery.data]);
   const proficiency = proficiencyQuery.data;
+  const providerDelegations = providerDelegationsQuery.data;
   const receivedAttestations = useMemo(() => receivedAttestationsQuery.data ?? [], [receivedAttestationsQuery.data]);
 
   const { data: assertionData } = useAssertionEvents(attestations);
@@ -219,6 +242,11 @@ export default function Profile() {
     () => (proficiency ? parseAttestorProficiencyDeclaration(proficiency).kinds : []),
     [proficiency],
   );
+
+  const trustedProviderDelegations = useMemo(() => {
+    if (!providerDelegations) return [];
+    return parseTrustedServiceProviderDelegations(providerDelegations);
+  }, [providerDelegations]);
 
   const recommendedKindGroups = useMemo(() => {
     const groups = new Map<number, Set<string>>();
@@ -411,6 +439,53 @@ export default function Profile() {
             ) : (
               <p className="text-sm text-muted-foreground">
                 No proficiency declaration published for this profile yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200 bg-white/90 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+            <CardTitle>Trusted Service Providers (NIP-85 kind 10040)</CardTitle>
+            {isOwnProfile ? (
+              <TrustedServiceProviderDelegationDialog
+                existing={providerDelegations}
+                open={providerDelegationDialogOpen}
+                onOpenChange={setProviderDelegationDialogOpen}
+                onPublished={() => providerDelegationsQuery.refetch()}
+              >
+                <Button size="sm" variant="outline">
+                  {providerDelegations ? 'Edit trusted providers' : 'Add trusted providers'}
+                </Button>
+              </TrustedServiceProviderDelegationDialog>
+            ) : null}
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {providerDelegationsQuery.isLoading ? (
+              <Skeleton className="h-14 w-full" />
+            ) : trustedProviderDelegations.length > 0 ? (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Last updated: {new Date(providerDelegations!.created_at * 1000).toLocaleString()}
+                </p>
+                <div className="space-y-2">
+                  {trustedProviderDelegations.map((delegation) => (
+                    <div key={`${delegation.listKind}:${delegation.assertionKind}:${delegation.providerPubkey}`} className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary">List {delegation.listKind}</Badge>
+                        <Badge variant="outline">Kind {delegation.assertionKind}</Badge>
+                      </div>
+                      <p className="mt-2 break-all font-mono text-xs text-slate-700">Provider: {delegation.providerPubkey}</p>
+                      {delegation.relayHint ? (
+                        <p className="mt-1 break-all text-xs text-muted-foreground">Relay: {delegation.relayHint}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No trusted service providers configured yet.
               </p>
             )}
           </CardContent>

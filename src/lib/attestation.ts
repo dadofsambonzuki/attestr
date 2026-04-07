@@ -10,6 +10,9 @@ export const ATTESTOR_PROFICIENCY_DECLARATION_KIND = 11871;
 export const TRUSTED_LISTS_KIND = 30392;
 export const TRUSTED_LISTS_KIND_MAX = 30395;
 
+// NIP-85 trusted service providers list
+export const TRUSTED_SERVICE_PROVIDERS_KIND = 10040;
+
 // Trusted Lists tag conventions
 export const TL_TAG_TRUSTED_ATTESTORS = 'trusted-attestors';
 export const TL_TAG_TRUSTED_ATTESTOR = 'trusted-attestor';
@@ -78,6 +81,13 @@ export interface ParsedTrustedAttestor {
   targetPubkey: string;
   kinds: number[];
   isSelfDeclaration: boolean;
+}
+
+export interface ParsedTrustedServiceProviderDelegation {
+  listKind: number;
+  assertionKind: number;
+  providerPubkey: string;
+  relayHint?: string;
 }
 
 export function getTagValue(event: NostrEvent, tagName: string): string | undefined {
@@ -184,6 +194,46 @@ export function parseTrustedListKindTags(event: NostrEvent): number[] {
   }
 
   return [...deduped.values()].sort((a, b) => a - b);
+}
+
+export function buildTrustedServiceProviderDelegationTag(
+  assertionKind: number,
+  providerPubkey: string,
+  relayHint?: string,
+  listKind: number = TRUSTED_LISTS_KIND,
+): string[] {
+  const selector = `${listKind}:${TL_TAG_KIND_PREFIX}${assertionKind}`;
+  return relayHint?.trim()
+    ? [selector, providerPubkey, relayHint.trim()]
+    : [selector, providerPubkey];
+}
+
+export function parseTrustedServiceProviderDelegationTag(tag: string[]): ParsedTrustedServiceProviderDelegation | null {
+  const [selector, providerPubkey, relayHint] = tag;
+  if (!selector || !providerPubkey) return null;
+
+  const match = selector.match(/^(\d+):k:(\d+)$/);
+  if (!match) return null;
+
+  const listKind = Number.parseInt(match[1], 10);
+  const assertionKind = Number.parseInt(match[2], 10);
+
+  if (!Number.isFinite(listKind) || !Number.isFinite(assertionKind)) return null;
+  if (listKind < TRUSTED_LISTS_KIND || listKind > TRUSTED_LISTS_KIND_MAX) return null;
+
+  return {
+    listKind,
+    assertionKind,
+    providerPubkey,
+    relayHint: relayHint?.trim() || undefined,
+  };
+}
+
+export function parseTrustedServiceProviderDelegations(event: NostrEvent): ParsedTrustedServiceProviderDelegation[] {
+  return event.tags
+    .map(parseTrustedServiceProviderDelegationTag)
+    .filter((entry): entry is ParsedTrustedServiceProviderDelegation => !!entry)
+    .sort((a, b) => a.assertionKind - b.assertionKind || a.providerPubkey.localeCompare(b.providerPubkey));
 }
 
 export function createAssertionTag(event: NostrEvent): string[] {

@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { CommentsSection } from '@/components/comments/CommentsSection';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useTrustedAttestorsForKind } from '@/hooks/useTrustedAttestorsForKind';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
 import { parseAttestation, toUnixTimestamp, type AttestationStatus } from '@/lib/attestation';
@@ -22,6 +23,7 @@ import { AttestationZapStats } from './AttestationZapStats';
 import { ATTESTATION_STATUS_DESCRIPTIONS } from '@/lib/attestation';
 import { AttestationStatusLabel } from './AttestationStatusBadge';
 import { EventDeletionRequestButton } from './EventDeletionRequestButton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AttestationDetailContentProps {
   attestation: NostrEvent;
@@ -46,6 +48,11 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
   const attestorAvatar = attestor.data?.metadata?.picture;
   const { user } = useCurrentUser();
   const { mutateAsync: publishEvent, isPending } = useNostrPublish();
+
+  const assertionKind = assertion?.kind;
+  const trustedAttestorsQuery = useTrustedAttestorsForKind(user?.pubkey, assertionKind);
+  const trustReason = trustedAttestorsQuery.data?.find((entry) => entry.attestorPubkey === attestation.pubkey);
+  const isTrustedForAssertionKind = Boolean(trustReason);
   const { toast } = useToast();
 
   const canUpdate = user?.pubkey === attestation.pubkey && !!parsed.d;
@@ -159,6 +166,28 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
             </a>
           </div>
           <p className="break-all font-mono text-xs text-muted-foreground">{attestorNpub}</p>
+          {isTrustedForAssertionKind ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge className="w-fit cursor-help bg-emerald-600 text-white hover:bg-emerald-600">Trusted for this assertion kind</Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="space-y-1 text-xs">
+                    {trustReason?.viaDirectList ? <p>Direct trusted list</p> : null}
+                    {trustReason && trustReason.providerPubkeys.length > 0 ? (
+                      <div>
+                        <p>Delegated provider{trustReason.providerPubkeys.length > 1 ? 's' : ''}:</p>
+                        {trustReason.providerPubkeys.map((providerPubkey) => (
+                          <p key={providerPubkey} className="font-mono text-[11px]">{providerPubkey}</p>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : null}
         </div>
         <div className="space-y-2">
           <div className="grid gap-2 sm:grid-cols-3">

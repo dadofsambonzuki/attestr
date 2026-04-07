@@ -49,6 +49,7 @@ const KIND_NAME_BY_NUMBER: Record<number, string> = {
   10015: 'Interests List',
   10019: 'Nutzap Mint Recommendation',
   10030: 'User Emoji List',
+  10040: 'Trusted Assertion Service Providers (NIP-85)',
   10050: 'DM Relay List',
   13194: 'Wallet Info',
   23194: 'Wallet Request',
