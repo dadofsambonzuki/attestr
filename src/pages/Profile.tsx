@@ -495,7 +495,7 @@ export default function Profile() {
         <section className="grid gap-6 md:grid-cols-2">
           <Card className="border-slate-200 bg-white/90 shadow-sm">
             <CardHeader>
-              <CardTitle>Attestations by this user</CardTitle>
+              <CardTitle>Attestations made</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {attestationsQuery.isLoading ? (
@@ -533,7 +533,7 @@ export default function Profile() {
 
           <Card className="border-slate-200 bg-white/90 shadow-sm">
             <CardHeader>
-              <CardTitle>Received attestations on authored assertions</CardTitle>
+              <CardTitle>Attestations received</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {receivedAttestationsQuery.isLoading ? (
@@ -562,7 +562,7 @@ export default function Profile() {
         <section className="grid gap-6 md:grid-cols-2">
           <Card className="border-slate-200 bg-white/90 shadow-sm">
             <CardHeader>
-              <CardTitle>Requests from this attestor</CardTitle>
+              <CardTitle>Requests made</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {requestsFromQuery.isLoading ? (
@@ -594,7 +594,7 @@ export default function Profile() {
 
           <Card className="border-slate-200 bg-white/90 shadow-sm">
             <CardHeader>
-              <CardTitle>Requests to this attestor</CardTitle>
+              <CardTitle>Requests received</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {requestsToQuery.isLoading ? (
@@ -628,7 +628,7 @@ export default function Profile() {
         <section className="grid gap-6 md:grid-cols-2">
           <Card className="border-slate-200 bg-white/90 shadow-sm">
             <CardHeader>
-              <CardTitle>Recommendations from this attestor</CardTitle>
+              <CardTitle>Recommendations given</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {recommendationsFromQuery.isLoading ? (
@@ -657,7 +657,7 @@ export default function Profile() {
 
           <Card className="border-slate-200 bg-white/90 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-              <CardTitle>Recommendations for this attestor</CardTitle>
+              <CardTitle>Recommendations received</CardTitle>
               {!isOwnProfile && user ? (
                 <AttestorRecommendationDialog
                   recommendedAttestorPubkey={pubkey}
