@@ -19,6 +19,8 @@ import {
   ATTESTATION_KIND,
   ATTESTATION_REQUEST_KIND,
   ATTESTOR_PROFICIENCY_DECLARATION_KIND,
+  TRUSTED_LISTS_KIND,
+  TL_TAG_TRUSTED_ATTESTOR,
   parseAttestation,
   parseAttestationRequest,
   parseAttestorProficiencyDeclaration,
@@ -141,9 +143,16 @@ export default function Marketplace() {
           authors: [user.pubkey],
           limit: 20,
         },
+        {
+          kinds: [TRUSTED_LISTS_KIND],
+          authors: [user.pubkey],
+          '#p': [user.pubkey],
+          '#t': [TL_TAG_TRUSTED_ATTESTOR, 'attestor-proficiency'],
+          limit: 20,
+        },
       ], { signal: AbortSignal.timeout(6000) });
 
-      return events.sort((a, b) => b.created_at - a.created_at)[0];
+      return selectNewestEventPreferTrustedList(events);
     },
     enabled: !!user?.pubkey,
   });
@@ -268,6 +277,18 @@ export default function Marketplace() {
       </main>
     </div>
   );
+}
+
+function selectNewestEventPreferTrustedList(events: NostrEvent[]): NostrEvent | undefined {
+  if (events.length === 0) return undefined;
+
+  return events.reduce((selected, candidate) => {
+    if (candidate.created_at > selected.created_at) return candidate;
+    if (candidate.created_at === selected.created_at && candidate.kind === TRUSTED_LISTS_KIND && selected.kind !== TRUSTED_LISTS_KIND) {
+      return candidate;
+    }
+    return selected;
+  });
 }
 
 function MarketplaceRequestCard({

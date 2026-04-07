@@ -27,7 +27,10 @@ export function useTrustedAttestorsForKind(subjectPubkey?: string, assertionKind
     queryKey: ['nostr', 'trusted-attestors-for-kind', subjectPubkey ?? '', assertionKind ?? -1],
     enabled: Boolean(subjectPubkey && Number.isFinite(assertionKind)),
     queryFn: async () => {
-      if (!subjectPubkey || !Number.isFinite(assertionKind)) return [] as TrustedAttestorTrustReason[];
+      if (!subjectPubkey || assertionKind === undefined || !Number.isFinite(assertionKind)) {
+        return [] as TrustedAttestorTrustReason[];
+      }
+      const targetKind = assertionKind;
 
       // Latest kind 10040 event from the subject defines current provider delegations.
       const delegationEvents = await nostr.query([
@@ -40,7 +43,7 @@ export function useTrustedAttestorsForKind(subjectPubkey?: string, assertionKind
 
       const newestDelegation = newestReplaceable(delegationEvents);
       const delegations = newestDelegation
-        ? parseTrustedServiceProviderDelegations(newestDelegation).filter((entry) => entry.assertionKind === assertionKind)
+        ? parseTrustedServiceProviderDelegations(newestDelegation).filter((entry) => entry.assertionKind === targetKind)
         : [];
 
       const delegatedProviderPolicies = new Map<string, Set<number>>();
@@ -76,7 +79,7 @@ export function useTrustedAttestorsForKind(subjectPubkey?: string, assertionKind
       for (const event of directListEvents) {
         const parsed = parseTrustedAttestors(event);
         if (parsed.isProviderOutput) continue;
-        if (!parsed.kinds.includes(assertionKind)) continue;
+        if (!parsed.kinds.includes(targetKind)) continue;
         for (const attestor of parsed.attestors) addDirectTrust(attestor);
       }
 
@@ -95,7 +98,7 @@ export function useTrustedAttestorsForKind(subjectPubkey?: string, assertionKind
           const parsed = parseTrustedAttestors(event);
           if (!parsed.isProviderOutput) continue;
           if (parsed.subjectPubkey !== subjectPubkey) continue;
-          if (!parsed.kinds.includes(assertionKind)) continue;
+          if (!parsed.kinds.includes(targetKind)) continue;
 
           const allowedListKinds = delegatedProviderPolicies.get(event.pubkey);
           if (!allowedListKinds || !allowedListKinds.has(event.kind)) continue;

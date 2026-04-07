@@ -32,7 +32,7 @@ export function AttestorRecommendationDialog({
         <DialogHeader>
           <DialogTitle>Recommend this attestor</DialogTitle>
           <DialogDescription>
-            Publish a kind 31873 recommendation for the profile you are viewing.
+            Publish this recommendation in both legacy and trusted-list formats.
           </DialogDescription>
         </DialogHeader>
 
