@@ -4,7 +4,6 @@ import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
@@ -17,14 +16,13 @@ import {
 } from '@/lib/attestation';
 import { KindTagSelector } from './KindTagSelector';
 import { ProfileLookupInput } from './ProfileLookupInput';
-import { resolveAuthorInput } from '@/lib/nostrIdentity';
 import { encodeNpub } from '@/lib/nostrEncodings';
 import { SignerMismatchWarning } from '@/components/SignerMismatchWarning';
+import { DeleteDelegationEventButton } from './DeleteDelegationEventButton';
 
 interface DelegationRow {
   providerPubkey: string;
   assertionKinds: number[];
-  relayHint: string;
 }
 
 interface TrustedServiceProviderDelegationFormProps {
@@ -34,29 +32,21 @@ interface TrustedServiceProviderDelegationFormProps {
 }
 
 function groupDelegationsByProvider(entries: ParsedTrustedServiceProviderDelegation[]): DelegationRow[] {
-  const grouped = new Map<string, { kinds: Set<number>; relayHint: string }>();
+  const grouped = new Map<string, Set<number>>();
 
   for (const entry of entries) {
     const existing = grouped.get(entry.providerPubkey);
     if (!existing) {
-      grouped.set(entry.providerPubkey, {
-        kinds: new Set([entry.assertionKind]),
-        relayHint: entry.relayHint ?? '',
-      });
+      grouped.set(entry.providerPubkey, new Set([entry.assertionKind]));
       continue;
     }
-
-    existing.kinds.add(entry.assertionKind);
-    if (!existing.relayHint && entry.relayHint) {
-      existing.relayHint = entry.relayHint;
-    }
+    existing.add(entry.assertionKind);
   }
 
   return [...grouped.entries()]
-    .map(([providerPubkey, state]) => ({
+    .map(([providerPubkey, kinds]) => ({
       providerPubkey,
-      assertionKinds: [...state.kinds].sort((a, b) => a - b),
-      relayHint: state.relayHint,
+      assertionKinds: [...kinds].sort((a, b) => a - b),
     }))
     .sort((a, b) => a.providerPubkey.localeCompare(b.providerPubkey));
 }
@@ -77,7 +67,6 @@ export function TrustedServiceProviderDelegationForm({
 
   const [providerInput, setProviderInput] = useState('');
   const [selectedProviderPubkey, setSelectedProviderPubkey] = useState<string>('');
-  const [relayHintInput, setRelayHintInput] = useState('');
   const [kindPickerValue, setKindPickerValue] = useState<string>('any');
   const [selectedKinds, setSelectedKinds] = useState<number[]>([]);
   const [rows, setRows] = useState<DelegationRow[]>(initialRows);
@@ -88,7 +77,6 @@ export function TrustedServiceProviderDelegationForm({
   const resetProviderDraft = () => {
     setProviderInput('');
     setSelectedProviderPubkey('');
-    setRelayHintInput('');
     setKindPickerValue('any');
     setSelectedKinds([]);
   };
@@ -104,7 +92,6 @@ export function TrustedServiceProviderDelegationForm({
           {
             providerPubkey: selectedProviderPubkey,
             assertionKinds: [...selectedKinds].sort((a, b) => a - b),
-            relayHint: relayHintInput.trim(),
           },
         ];
       }
@@ -115,7 +102,6 @@ export function TrustedServiceProviderDelegationForm({
       next[existingIndex] = {
         providerPubkey: row.providerPubkey,
         assertionKinds: [...mergedKinds].sort((a, b) => a - b),
-        relayHint: relayHintInput.trim() || row.relayHint,
       };
       return next;
     });
@@ -127,7 +113,7 @@ export function TrustedServiceProviderDelegationForm({
     if (!canSubmit) return;
 
     const tags = rows.flatMap((row) =>
-      row.assertionKinds.map((kind) => buildTrustedServiceProviderDelegationTag(kind, row.providerPubkey, row.relayHint || undefined)),
+      row.assertionKinds.map((kind) => buildTrustedServiceProviderDelegationTag(kind, row.providerPubkey, undefined)),
     );
 
     try {
@@ -167,51 +153,19 @@ export function TrustedServiceProviderDelegationForm({
         <ProfileLookupInput
           id="trusted-provider-input"
           value={providerInput}
-          onValueChange={setProviderInput}
+          onValueChange={(val) => {
+            setProviderInput(val);
+            setSelectedProviderPubkey('');
+          }}
           placeholder="username, nip05, npub, or hex"
           onSelectPubkey={(pubkey) => {
             setSelectedProviderPubkey(pubkey);
-            setProviderInput(pubkey);
+            setProviderInput(encodeNpub(pubkey));
           }}
         />
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={async () => {
-              const value = providerInput.trim();
-              if (!value) return;
-              const resolved = await resolveAuthorInput(value);
-              if (!resolved) {
-                toast({
-                  title: 'Invalid provider identifier',
-                  description: 'Enter a valid username, nip05, npub, or hex pubkey.',
-                  variant: 'destructive',
-                });
-                return;
-              }
-              setSelectedProviderPubkey(resolved);
-              setProviderInput(resolved);
-            }}
-          >
-            Resolve provider
-          </Button>
-          {selectedProviderPubkey ? (
-            <div className="rounded-md border bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
-              {encodeNpub(selectedProviderPubkey)}
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="trusted-provider-relay">Relay hint (optional)</Label>
-        <Input
-          id="trusted-provider-relay"
-          value={relayHintInput}
-          onChange={(event) => setRelayHintInput(event.target.value)}
-          placeholder="wss://relay.example.com"
-        />
+        {selectedProviderPubkey ? (
+          <p className="text-xs text-muted-foreground font-mono">{encodeNpub(selectedProviderPubkey)}</p>
+        ) : null}
       </div>
 
       <KindTagSelector
@@ -252,16 +206,20 @@ export function TrustedServiceProviderDelegationForm({
                 </Button>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">Kinds: {row.assertionKinds.join(', ')}</p>
-              {row.relayHint ? <p className="text-xs text-muted-foreground">Relay: {row.relayHint}</p> : null}
             </div>
           ))
         )}
       </div>
 
-      <Button className="w-full gap-2" disabled={!canSubmit || isPending} onClick={handlePublish}>
-        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-        Save trusted service providers
-      </Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Button className="w-full gap-2 sm:flex-1" disabled={!canSubmit || isPending} onClick={handlePublish}>
+          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          Save trusted service providers
+        </Button>
+        {existing ? (
+          <DeleteDelegationEventButton event={existing} onDeleted={onPublished} />
+        ) : null}
+      </div>
     </div>
   );
 
