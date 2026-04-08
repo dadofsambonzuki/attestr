@@ -5,7 +5,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { NoteContent } from '@/components/NoteContent';
 import { useAuthor } from '@/hooks/useAuthor';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { getEventViewerUrl } from '@/lib/viewers';
@@ -14,6 +13,7 @@ import { encodeEventPointer } from '@/lib/nostrEncodings';
 import { formatKind } from '@/lib/nostrKinds';
 import type { AttestationStatus } from '@/lib/attestation';
 import { AttestationStatusBadge } from './AttestationStatusBadge';
+import { AssertionContentRenderer } from './AssertionContentRenderer';
 
 interface AssertionPreviewProps {
   event?: NostrEvent;
@@ -63,15 +63,9 @@ export function AssertionPreview({ event, fallbackLabel = 'Assertion event unava
 
         <p className="font-mono break-all text-xs text-muted-foreground">{encodeEventPointer(event)}</p>
 
-        {event.kind === 1 && event.content ? (
-          <div className="rounded-md border bg-background p-3 text-sm">
-            <NoteContent event={event} className="whitespace-pre-wrap break-words" />
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Metadata preview only for this kind in Phase 1.
-          </p>
-        )}
+        <div className="rounded-md border bg-background p-3 text-sm">
+          <AssertionContentRenderer event={event} mode="summary" />
+        </div>
 
         <Button asChild variant="outline" size="sm" className="gap-2">
           <a href={getEventViewerUrl(event)} target="_blank" rel="noreferrer">

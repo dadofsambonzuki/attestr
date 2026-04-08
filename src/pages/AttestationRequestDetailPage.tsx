@@ -139,7 +139,7 @@ export default function AttestationRequestDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 via-white to-amber-50 text-slate-900">
       <AppHeader />
-      <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         {query.isLoading ? (
           <Card>
             <CardHeader><CardTitle>Loading request</CardTitle></CardHeader>

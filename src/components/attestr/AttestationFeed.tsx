@@ -16,6 +16,7 @@ import { AttestationCardStats } from './AttestationCardStats';
 import { ZapButton } from '@/components/ZapButton';
 import { getKindName } from '@/lib/nostrKinds';
 import { AttestationStatusBadge } from './AttestationStatusBadge';
+import { AssertionContentRenderer } from './AssertionContentRenderer';
 
 interface AttestationFeedProps {
   filters: AttestationFeedFilters;
@@ -106,7 +107,6 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
   const attestorAvatar = attestor.data?.metadata?.picture;
   const asserterName = assertion ? getNostrDisplayName(asserter.data?.metadata, assertion.pubkey) : 'Unknown author';
   const asserterAvatar = assertion ? asserter.data?.metadata?.picture : undefined;
-  const assertionContent = assertion?.content.trim() ?? '';
   const assertionKindLabel = assertion ? (getKindName(assertion.kind) ?? 'Unkown') : 'Event reference';
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [initialSection, setInitialSection] = useState<'overview' | 'zaps' | 'comments'>('overview');
@@ -164,7 +164,13 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
               </div>
               <Badge variant="outline" className="max-w-[45%] truncate text-[10px] font-medium">{assertionKindLabel}</Badge>
             </div>
-            <p className="mt-2 line-clamp-2 text-xs text-slate-600">{assertionContent || 'Assertion content unavailable.'}</p>
+            <div className="mt-2 text-xs text-slate-600">
+              {assertion ? (
+                <AssertionContentRenderer event={assertion} mode="summary" />
+              ) : (
+                <p className="line-clamp-2">Assertion content unavailable.</p>
+              )}
+            </div>
           </div>
 
           <p className="text-xs text-muted-foreground break-words">

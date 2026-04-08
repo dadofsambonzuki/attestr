@@ -203,7 +203,7 @@ export default function Marketplace() {
     <div className="min-h-screen bg-gradient-to-b from-slate-100 via-white to-amber-50 text-slate-900">
       <AppHeader />
 
-      <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <Card className="border-slate-200 bg-white/90 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
             <CardTitle className="text-2xl">Marketplace</CardTitle>

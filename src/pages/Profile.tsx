@@ -403,7 +403,7 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-100 via-white to-amber-50 text-slate-900">
         <AppHeader />
-        <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
               Invalid profile identifier.
@@ -421,7 +421,7 @@ export default function Profile() {
     <div className="min-h-screen bg-gradient-to-b from-slate-100 via-white to-amber-50 text-slate-900">
       <AppHeader />
 
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <main className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <Card className="border-slate-200 bg-white/90 shadow-sm">
           <CardContent className="space-y-4 p-6">
             <div className="flex flex-wrap items-center gap-4">
