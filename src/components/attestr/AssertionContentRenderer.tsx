@@ -21,6 +21,10 @@ export function AssertionContentRenderer({ event, mode = 'full' }: AssertionCont
     return <Kind30023View event={event} mode={mode} />;
   }
 
+  if (event.kind === 37515) {
+    return <Kind37515PlacesView event={event} mode={mode} />;
+  }
+
   if (mode === 'summary') {
     const summary = event.content.trim();
 
@@ -120,6 +124,137 @@ function Kind30023View({ event, mode }: { event: NostrEvent; mode: 'summary' | '
       ) : null}
     </div>
   );
+}
+
+function Kind37515PlacesView({ event, mode }: { event: NostrEvent; mode: 'summary' | 'full' }) {
+  const point = parsePlacePoint(event.content);
+  const placeName = getTagValue(event, 'name') ?? getTagValue(event, 'title');
+  const placeSummary = getTagValue(event, 'summary') ?? getTagValue(event, 'description');
+  const placeAddress = getTagValue(event, 'address');
+  const placeGeohash = getTagValue(event, 'g');
+
+  if (!point) {
+    return mode === 'summary'
+      ? <p className="text-sm text-muted-foreground break-words line-clamp-2">Invalid place GeoJSON content</p>
+      : <p className="text-sm text-muted-foreground break-words">Invalid place GeoJSON content</p>;
+  }
+
+  const { latitude, longitude } = point;
+  const bbox = buildOsmBbox(longitude, latitude, 0.01);
+  const embeddedMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${latitude}%2C${longitude}`;
+  const openStreetMapUrl = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=14/${latitude}/${longitude}`;
+
+  if (mode === 'summary') {
+    return (
+      <div className="space-y-1 text-sm">
+        {placeName ? <p className="font-medium line-clamp-1">{placeName}</p> : null}
+        {placeSummary ? (
+          <p className="text-muted-foreground break-words line-clamp-2">{placeSummary}</p>
+        ) : null}
+        <p className="text-muted-foreground break-words line-clamp-1">
+          {latitude.toFixed(5)}, {longitude.toFixed(5)}
+        </p>
+        <iframe
+          title={`Place map at ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`}
+          src={embeddedMapUrl}
+          className="h-24 w-full rounded-md border border-slate-200"
+          loading="lazy"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 text-sm">
+      {placeName ? <p className="font-medium break-words">{placeName}</p> : null}
+      {placeSummary ? (
+        <p className="text-muted-foreground break-words whitespace-pre-wrap">{placeSummary}</p>
+      ) : null}
+      {placeAddress ? (
+        <p className="text-muted-foreground break-words">Address: {placeAddress}</p>
+      ) : null}
+      {placeGeohash ? (
+        <p className="font-mono text-xs text-muted-foreground break-all">Geohash: {placeGeohash}</p>
+      ) : null}
+      <p className="text-muted-foreground break-words">
+        Coordinates: {latitude.toFixed(6)}, {longitude.toFixed(6)}
+      </p>
+      <a
+        href={openStreetMapUrl}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="block"
+      >
+        <iframe
+          title={`Place map at ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`}
+          src={embeddedMapUrl}
+          className="h-56 w-full rounded-md border border-slate-200"
+          loading="lazy"
+        />
+      </a>
+      <p className="text-xs text-muted-foreground">Map data © OpenStreetMap contributors</p>
+    </div>
+  );
+}
+
+function buildOsmBbox(longitude: number, latitude: number, delta: number): string {
+  const minLon = clamp(longitude - delta, -180, 180);
+  const minLat = clamp(latitude - delta, -90, 90);
+  const maxLon = clamp(longitude + delta, -180, 180);
+  const maxLat = clamp(latitude + delta, -90, 90);
+
+  return `${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}`;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function getTagValue(event: NostrEvent, tagName: string): string | undefined {
+  const value = event.tags.find(([name]) => name === tagName)?.[1];
+  return value && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function parsePlacePoint(input: string): { latitude: number; longitude: number } | null {
+  try {
+    const parsed = JSON.parse(input) as unknown;
+    if (!parsed || typeof parsed !== 'object') return null;
+
+    const featureCollection = parsed as {
+      type?: unknown;
+      features?: unknown;
+    };
+
+    if (featureCollection.type !== 'FeatureCollection' || !Array.isArray(featureCollection.features)) {
+      return null;
+    }
+
+    const pointFeature = featureCollection.features.find((feature): feature is {
+      type?: unknown;
+      geometry?: { type?: unknown; coordinates?: unknown };
+    } => {
+      if (!feature || typeof feature !== 'object') return false;
+      const candidate = feature as { type?: unknown; geometry?: { type?: unknown; coordinates?: unknown } };
+      return candidate.type === 'Feature' && candidate.geometry?.type === 'Point' && Array.isArray(candidate.geometry.coordinates);
+    });
+
+    if (!pointFeature) return null;
+
+    const geometry = pointFeature.geometry;
+    if (!geometry || !Array.isArray(geometry.coordinates)) return null;
+    const coordinates = geometry.coordinates as unknown[];
+    if (coordinates.length < 2) return null;
+
+    const longitude = Number(coordinates[0]);
+    const latitude = Number(coordinates[1]);
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+
+    return { latitude, longitude };
+  } catch {
+    return null;
+  }
 }
 
 function parseJson(input: string): Record<string, unknown> | null {
