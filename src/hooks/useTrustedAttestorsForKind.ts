@@ -83,7 +83,10 @@ export function useTrustedAttestorsForKind(subjectPubkey?: string, assertionKind
         for (const attestor of parsed.attestors) addDirectTrust(attestor);
       }
 
-      // Provider-generated trust lists for this subject, constrained by subject's own kind10040 delegations.
+      // Provider-generated trust lists, constrained by subject's own kind 10040 delegations.
+      // TSPs publish either:
+      //   - A global list (no subject tag) covering all users who delegate to them
+      //   - A subject-specific list (t=subject:<pubkey>) which overrides the global list for that subject
       const providerPubkeys = [...delegatedProviderPolicies.keys()];
       if (providerPubkeys.length > 0) {
         const providerListEvents = await nostr.query([
@@ -94,16 +97,40 @@ export function useTrustedAttestorsForKind(subjectPubkey?: string, assertionKind
           },
         ], { signal: AbortSignal.timeout(8000) });
 
+        // Separate subject-specific and global lists per provider.
+        // Subject-specific lists override the global list for that provider.
+        const subjectSpecific = new Map<string, typeof providerListEvents[number][]>();
+        const globalLists = new Map<string, typeof providerListEvents[number][]>();
+
         for (const event of providerListEvents) {
           const parsed = parseTrustedAttestors(event);
-          if (!parsed.isProviderOutput) continue;
-          if (parsed.subjectPubkey !== subjectPubkey) continue;
-          if (!parsed.kinds.includes(targetKind)) continue;
 
           const allowedListKinds = delegatedProviderPolicies.get(event.pubkey);
           if (!allowedListKinds || !allowedListKinds.has(event.kind)) continue;
+          if (!parsed.kinds.includes(targetKind)) continue;
 
-          for (const attestor of parsed.attestors) addDelegatedTrust(attestor, event.pubkey);
+          if (parsed.isProviderOutput) {
+            if (parsed.subjectPubkey !== subjectPubkey) continue;
+            const arr = subjectSpecific.get(event.pubkey) ?? [];
+            arr.push(event);
+            subjectSpecific.set(event.pubkey, arr);
+          } else {
+            const arr = globalLists.get(event.pubkey) ?? [];
+            arr.push(event);
+            globalLists.set(event.pubkey, arr);
+          }
+        }
+
+        for (const providerPubkey of providerPubkeys) {
+          // Use subject-specific lists if present, otherwise fall back to global.
+          const lists = subjectSpecific.has(providerPubkey)
+            ? subjectSpecific.get(providerPubkey)!
+            : (globalLists.get(providerPubkey) ?? []);
+
+          for (const event of lists) {
+            const parsed = parseTrustedAttestors(event);
+            for (const attestor of parsed.attestors) addDelegatedTrust(attestor, providerPubkey);
+          }
         }
       }
 
