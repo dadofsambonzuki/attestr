@@ -3,6 +3,7 @@ import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { NKinds } from '@nostrify/nostrify';
 
 import { AppHeader } from '@/components/AppHeader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,6 +28,7 @@ import {
   parseAttestationRequest,
   parseAttestorProficiencyDeclaration,
   parseAttestorRecommendation,
+  getAddressCoordinate,
   parseTrustedAttestor,
   parseTrustedServiceProviderDelegations,
 } from '@/lib/attestation';
@@ -215,19 +217,69 @@ export default function Profile() {
     enabled: !!pubkey,
   });
 
-  const receivedAttestationsQuery = useQuery({
-    queryKey: ['nostr', 'profile-received-attestations', pubkey ?? ''],
+  const authoredAssertionsQuery = useQuery({
+    queryKey: ['nostr', 'profile-authored-assertions', pubkey ?? ''],
     queryFn: async () => {
+      if (!pubkey) return [];
+
       const events = await nostr.query([
         {
-          kinds: [ATTESTATION_KIND],
-          limit: 300,
+          authors: [pubkey],
+          limit: 200,
         },
       ], { signal: AbortSignal.timeout(6000) });
 
-      return events.sort((a, b) => b.created_at - a.created_at);
+      return events;
     },
     enabled: !!pubkey,
+  });
+
+  const authoredAssertions = useMemo(() => authoredAssertionsQuery.data ?? [], [authoredAssertionsQuery.data]);
+  const authoredAssertionIds = useMemo(() => new Set(authoredAssertions.map((event) => event.id)), [authoredAssertions]);
+  const authoredAssertionAddresses = useMemo(() => {
+    const addresses = new Set<string>();
+
+    for (const event of authoredAssertions) {
+      if (NKinds.addressable(event.kind)) {
+        addresses.add(getAddressCoordinate(event));
+      }
+
+      if (NKinds.replaceable(event.kind)) {
+        addresses.add(`${event.kind}:${event.pubkey}:`);
+      }
+    }
+
+    return addresses;
+  }, [authoredAssertions]);
+
+  const receivedAttestationsQuery = useQuery({
+    queryKey: [
+      'nostr',
+      'profile-received-attestations',
+      pubkey ?? '',
+      [...authoredAssertionIds].sort(),
+      [...authoredAssertionAddresses].sort(),
+    ],
+    queryFn: async () => {
+      const eIds = [...authoredAssertionIds.values()];
+      const aCoords = [...authoredAssertionAddresses.values()];
+
+      if (eIds.length === 0 && aCoords.length === 0) return [];
+
+      const filters = [
+        ...(eIds.length > 0
+          ? [{ kinds: [ATTESTATION_KIND], '#e': eIds, limit: 300 }]
+          : []),
+        ...(aCoords.length > 0
+          ? [{ kinds: [ATTESTATION_KIND], '#a': aCoords, limit: 300 }]
+          : []),
+      ];
+
+      const events = await nostr.query(filters, { signal: AbortSignal.timeout(6000) });
+      const deduped = new Map(events.map((event) => [event.id, event]));
+      return [...deduped.values()].sort((a, b) => b.created_at - a.created_at);
+    },
+    enabled: !!pubkey && authoredAssertionsQuery.isSuccess,
   });
 
   const attestations = useMemo(() => attestationsQuery.data ?? [], [attestationsQuery.data]);
@@ -294,6 +346,9 @@ export default function Profile() {
         ? parseAddressCoordinate(parsed.assertionRef.value)
         : null;
       const isAuthoredAssertion = Boolean(
+        (parsed.assertionRef.type === 'e' && authoredAssertionIds.has(parsed.assertionRef.value))
+        || (parsed.assertionRef.type === 'a' && authoredAssertionAddresses.has(parsed.assertionRef.value))
+        ||
         (assertion && assertion.pubkey === pubkey)
         || (coordinate && coordinate.pubkey === pubkey),
       );
@@ -325,15 +380,19 @@ export default function Profile() {
       .map((group) => {
         const uniqueAttestors = [...new Set(group.attestations.map((event) => event.pubkey))];
         const latestAttestationAt = Math.max(...group.attestations.map((event) => event.created_at));
+        const latestAttestation = group.attestations.reduce((latest, candidate) => (
+          candidate.created_at > latest.created_at ? candidate : latest
+        ));
         return {
           groupKey: `${group.assertionRef}:${latestAttestationAt}`,
           ...group,
           uniqueAttestors,
           latestAttestationAt,
+          latestAttestation,
         };
       })
       .sort((a, b) => b.latestAttestationAt - a.latestAttestationAt);
-  }, [receivedAttestations, receivedAssertionData, pubkey]);
+  }, [receivedAttestations, receivedAssertionData, pubkey, authoredAssertionAddresses, authoredAssertionIds]);
 
   useSeoMeta({
     title: pubkey ? 'Profile • Attestr' : 'Profile not found • Attestr',
@@ -552,6 +611,7 @@ export default function Profile() {
                     assertionKind={group.assertionKind}
                     attestationCount={group.attestations.length}
                     attestorPubkeys={group.uniqueAttestors}
+                    latestAttestation={group.latestAttestation}
                   />
                 ))
               )}
@@ -921,14 +981,17 @@ function ReceivedAssertionSummaryCard({
   assertionKind,
   attestationCount,
   attestorPubkeys,
+  latestAttestation,
 }: {
   assertion?: NostrEvent;
   assertionKind?: number;
   attestationCount: number;
   attestorPubkeys: string[];
+  latestAttestation: NostrEvent;
 }) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const canOpenDetails = Boolean(assertion);
+  const latestParsed = parseAttestation(latestAttestation);
 
   return (
     <>
@@ -942,13 +1005,16 @@ function ReceivedAssertionSummaryCard({
         }}
       >
         <div className="flex items-center justify-between gap-2">
-          <Badge variant="secondary">
-            {typeof assertion?.kind === 'number'
-              ? formatKind(assertion.kind)
-              : typeof assertionKind === 'number'
-                ? formatKind(assertionKind)
-                : 'Event reference'}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">
+              {typeof assertion?.kind === 'number'
+                ? formatKind(assertion.kind)
+                : typeof assertionKind === 'number'
+                  ? formatKind(assertionKind)
+                  : 'Event reference'}
+            </Badge>
+            <AttestationStatusBadge status={latestParsed.status} />
+          </div>
           <span className="text-xs text-muted-foreground">{attestationCount} attestations</span>
         </div>
 
