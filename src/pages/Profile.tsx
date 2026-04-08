@@ -99,7 +99,7 @@ export default function Profile() {
         },
       ], { signal: AbortSignal.timeout(6000) });
 
-      return groupLatestByPubkeyAndD(events).sort((a, b) => b.created_at - a.created_at);
+      return dedupeEventsById(events).sort((a, b) => b.created_at - a.created_at);
     },
     enabled: !!pubkey,
   });
@@ -117,7 +117,7 @@ export default function Profile() {
         },
       ], { signal: AbortSignal.timeout(6000) });
 
-      return groupLatestByPubkeyAndD(events).sort((a, b) => b.created_at - a.created_at);
+      return dedupeEventsById(events).sort((a, b) => b.created_at - a.created_at);
     },
     enabled: !!pubkey,
   });
@@ -1099,19 +1099,16 @@ function RecommenderAvatar({ pubkey, overlapIndex }: { pubkey: string; overlapIn
   );
 }
 
-function groupLatestByPubkeyAndD(events: NostrEvent[]): NostrEvent[] {
-  const byKey = new Map<string, NostrEvent>();
+function dedupeEventsById(events: NostrEvent[]): NostrEvent[] {
+  const byId = new Map<string, NostrEvent>();
 
   for (const event of events) {
-    const d = event.tags.find(([name]) => name === 'd')?.[1] ?? event.id;
-    const key = `${event.pubkey}:${d}`;
-    const previous = byKey.get(key);
-    if (!previous || event.created_at > previous.created_at) {
-      byKey.set(key, event);
+    if (!byId.has(event.id)) {
+      byId.set(event.id, event);
     }
   }
 
-  return [...byKey.values()];
+  return [...byId.values()];
 }
 
 function groupLatestRecommendationsByAuthorAndTarget(events: NostrEvent[]): NostrEvent[] {
