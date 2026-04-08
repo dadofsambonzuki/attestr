@@ -35,6 +35,7 @@ export function AccountSwitcher({ onAddAccountClick }: AccountSwitcherProps) {
   if (!currentUser) return null;
 
   const getDisplayName = (account: Account): string => {
+    if (!account.pubkey) return 'Unknown';
     return getNostrDisplayName(account.metadata, account.pubkey);
   }
 
