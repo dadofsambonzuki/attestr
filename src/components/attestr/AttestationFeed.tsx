@@ -9,6 +9,8 @@ import { useAttestationFeed, type AttestationFeedFilters } from '@/hooks/useAtte
 import { parseAttestation } from '@/lib/attestation';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
 import { useAuthor } from '@/hooks/useAuthor';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useTrustedAttestorsForKind } from '@/hooks/useTrustedAttestorsForKind';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
 import { getProfilePath } from '@/lib/nostrEncodings';
 import { AttestationDetailSheet } from './AttestationDetailSheet';
@@ -17,6 +19,7 @@ import { ZapButton } from '@/components/ZapButton';
 import { getKindName } from '@/lib/nostrKinds';
 import { AttestationStatusBadge } from './AttestationStatusBadge';
 import { AssertionContentRenderer } from './AssertionContentRenderer';
+import { TrustedBadge } from './TrustedBadge';
 
 interface AttestationFeedProps {
   filters: AttestationFeedFilters;
@@ -101,6 +104,7 @@ interface AttestationCardProps {
 
 function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) {
   const parsed = parseAttestation(event);
+  const { user } = useCurrentUser();
   const attestor = useAuthor(event.pubkey);
   const asserter = useAuthor(assertion?.pubkey ?? '');
   const attestorName = getNostrDisplayName(attestor.data?.metadata, event.pubkey);
@@ -108,6 +112,8 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
   const asserterName = assertion ? getNostrDisplayName(asserter.data?.metadata, assertion.pubkey) : 'Unknown author';
   const asserterAvatar = assertion ? asserter.data?.metadata?.picture : undefined;
   const assertionKindLabel = assertion ? (getKindName(assertion.kind) ?? 'Unkown') : 'Event reference';
+  const trustedAttestorsQuery = useTrustedAttestorsForKind(user?.pubkey, assertion?.kind);
+  const trustReason = trustedAttestorsQuery.data?.find((entry) => entry.attestorPubkey === event.pubkey);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [initialSection, setInitialSection] = useState<'overview' | 'zaps' | 'comments'>('overview');
 
@@ -142,8 +148,9 @@ function AttestationCard({ event, assertion, onUpdated }: AttestationCardProps) 
           <p className="line-clamp-2 text-sm text-slate-700">{event.content.trim() || 'No attestation message.'}</p>
 
           <div className="rounded-md border border-slate-200 bg-slate-50/70 p-3">
-            <div className="mb-2">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
               <AttestationStatusBadge status={parsed.status} />
+              {trustReason ? <TrustedBadge trustReason={trustReason} /> : null}
             </div>
             <div className="flex min-w-0 items-start justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">

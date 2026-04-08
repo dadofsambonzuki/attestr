@@ -23,7 +23,7 @@ import { AttestationZapStats } from './AttestationZapStats';
 import { ATTESTATION_STATUS_DESCRIPTIONS } from '@/lib/attestation';
 import { AttestationStatusLabel } from './AttestationStatusBadge';
 import { EventDeletionRequestButton } from './EventDeletionRequestButton';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TrustedBadge } from './TrustedBadge';
 
 interface AttestationDetailContentProps {
   attestation: NostrEvent;
@@ -166,27 +166,8 @@ export function AttestationDetailContent({ attestation, assertion, onUpdated, in
             </a>
           </div>
           <p className="break-all font-mono text-xs text-muted-foreground">{attestorNpub}</p>
-          {isTrustedForAssertionKind ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge className="w-fit cursor-help bg-emerald-600 text-white hover:bg-emerald-600">Trusted for this assertion kind</Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <div className="space-y-1 text-xs">
-                    {trustReason?.viaDirectList ? <p>Direct trusted list</p> : null}
-                    {trustReason && trustReason.providerPubkeys.length > 0 ? (
-                      <div>
-                        <p>Delegated provider{trustReason.providerPubkeys.length > 1 ? 's' : ''}:</p>
-                        {trustReason.providerPubkeys.map((providerPubkey) => (
-                          <p key={providerPubkey} className="font-mono text-[11px]">{providerPubkey}</p>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          {isTrustedForAssertionKind && trustReason ? (
+            <TrustedBadge trustReason={trustReason} />
           ) : null}
         </div>
         <div className="space-y-2">
