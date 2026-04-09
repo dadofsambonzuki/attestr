@@ -38,14 +38,14 @@ Implementing clients: **Attestr**, **Amethyst**, **Nostria**, **WalletScrutiny**
 
 ### Attestation Trust Models
 
-WoT is commonly applied between npubs on Nostr. Attestations extend this to a contextual WoT for all notes of all kinds. Four trust model layers were identified -- **two are implemented in Attestr today**:
+WoT is commonly applied between npubs on Nostr. Attestations extend this to a contextual WoT for all notes of all kinds. Four trust model layers were identified:
 
 1. **Self-declared Lists** (31873 / 30392) -- "Here is a list of attestors I trust for verifying these kinds." Users curate trusted attestor lists directly.
 2. **Delegated Lists** (NIP-85 kind 10040) -- "I trust these npubs to decide who I should trust for given kinds." Users delegate trust resolution to service providers.
-3. *Decentralised Lists (kind 9998/9 + 3998/9)* -- Trust determined from the user's broader WoT graph. (Future work.)
-4. *Calculated Attestation Score* -- A Trusted Provider computes personalised attestation scores based on the user's WoT. (Future work -- see NIP-85 provider design doc.)
+3. **Decentralised Lists (kind 9998/9 + 3998/9)** -- Trust determined from the user's broader WoT graph.
+4. **Calculated Attestation Score** -- A Trusted Provider computes personalised attestation scores based on the user's WoT.
 
-The first two models are fully implemented with a migration path from NIP-specific kinds to standardised Trusted Lists (kinds 30392-30395), using dual-write and dual-read strategies for backward compatibility.
+The first two models are fully implemented with a migration path from NIP-specific kinds to standardised Trusted Lists (kinds 30392-30395), using dual-write and dual-read strategies for backward compatibility. The later two are on the attestr roadmap.
 
 ### Application Features
 
