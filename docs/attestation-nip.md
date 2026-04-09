@@ -452,7 +452,7 @@ Recommended trust resolution precedence:
 
 # NIP-85 Trusted Assertion Provider
 
-Trusted Assertion Providers can operate as NIP-85 providers that publishes event validity scores so clients do not need to run trust graph calculations on-device.
+Trusted Assertion Providers can operate as NIP-85 providers that publish event validity scores so clients do not need to run trust graph calculations on-device.
 
 ## NIP-85 Subject Coverage
 
