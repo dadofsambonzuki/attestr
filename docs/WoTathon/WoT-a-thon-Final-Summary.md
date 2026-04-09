@@ -1,22 +1,25 @@
 # Attestr -- Notaries on Nostr
 
-**WoT-a-thon Final Summary**
-
 ## The Problem
 
-Credentials are traditionally issued by centralised, trusted authorities. Nostr's cryptographically signed, self-publishing model can invert this power structure -- enabling "first-person" credentials issued by sovereign individuals and recognised (or not) by others. But Nostr lacked standardised infrastructure for making, tracking, and revoking truthfulness claims about events. Without this primitive, trust signals were ad-hoc and non-interoperable, verification expertise could not be discovered or monetised, and critical use cases had no unified framework.
+Credentials are traditionally issued by centralised, trusted authorities. Nostr's cryptographically signed, self-publishing model can invert this power structure - enabling "first-person" credentials issued by sovereign individuals and recognised (or not) by others.
+
+However, Nostr lacked standardised infrastructure for making, tracking, and revoking truthfulness claims about events. Without this primitive, trust signals were ad-hoc and non-interoperable, verification expertise could not be discovered or monetised, and critical use cases had no unified framework.
 
 Attestations fix this.
 
 ## What We Built
 
-**Attestr** is an attestation marketplace for Nostr. It enables anyone to become a "pleb oracle" by creating a platform where users can discover specialised attestors to verify their events, identities, and claims -- while attestors build reputation and monetise their verification expertise across kind-specific webs of trust.
+**Attestr** is an attestation marketplace for Nostr. It enables anyone to become a "pleb oracle" by creating a platform where users can discover specialised attestors to verify their events, identities, and claims - while attestors build reputation and monetise their verification expertise across kind-specific webs-of-trust.
 
-**Live at [attestr.xyz](https://attestr.xyz)**
+- [Short explainer video](https://www.loom.com/share/916847795763432d876230613ac7368b) and [the slides used](https://docs.google.com/presentation/d/1cEhujb3PU5X1-V236r4H1NcUG3gZEYvHeZPs-1PqRRc/edit?usp=sharing)
+- [Short product demo video](https://www.loom.com/share/a6d3b904ccdd425f8bb6326e4383c63e)
+
+Live now at [attestr.xyz](https://attestr.xyz) running [this code](https://github.com/dadofsambonzuki/attestr).
 
 ### Attestation NIP
 
-The [Updated Attestation NIP](docs/attestation-nip.md) defines four core event kinds, with Trusted Lists (kind 30392) variants for attestor trust and proficiency:
+The [Updated Attestation NIP](https://github.com/dadofsambonzuki/attestr/blob/7de4800b3473afe6885c9e8930e2b954f27660fd/docs/attestation-nip.md) defines four core event kinds, with Trusted Lists (kind 30392) variants for attestor trust and proficiency:
 
 **Core Kinds:**
 
