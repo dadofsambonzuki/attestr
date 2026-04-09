@@ -688,7 +688,7 @@ export default function Profile() {
         <section className="grid gap-6 md:grid-cols-2">
           <Card className="border-slate-200 bg-white/90 shadow-sm">
             <CardHeader>
-              <CardTitle>Recommendations given</CardTitle>
+              <CardTitle>Trusted assertors</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {recommendationsFromQuery.isLoading ? (
@@ -717,7 +717,7 @@ export default function Profile() {
 
           <Card className="border-slate-200 bg-white/90 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-              <CardTitle>Recommendations received</CardTitle>
+              <CardTitle>Trusted by</CardTitle>
               {!isOwnProfile && user ? (
                 <AttestorRecommendationDialog
                   recommendedAttestorPubkey={pubkey}
