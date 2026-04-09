@@ -75,7 +75,5 @@ Attestors build reputation in specific domains, and trust becomes composable, po
 
 Attestations are the temporal counterpart to delegation: where delegation authorises action before the fact, attestations verify claims after the fact.
 
-Signed JSON. Trusted npubs. Attested events.
-
-Together, these help form a set of trust primitives for the sovereign internet.
+Signed JSON. Trusted npubs. Attested events. Together, these help form a set of trust primitives for the sovereign internet.
 
