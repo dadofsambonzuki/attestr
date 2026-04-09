@@ -1,4 +1,4 @@
-# Attestr -- Notaries on Nostr
+# WoTathon Submission for Attestr - Notaries on Nostr
 
 ## The Problem
 
