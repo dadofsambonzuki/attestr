@@ -22,6 +22,7 @@ import {
   ATTESTOR_RECOMMENDATION_KIND,
   TRUSTED_SERVICE_PROVIDERS_KIND,
   TRUSTED_LISTS_KIND,
+  TRUSTED_LISTS_KIND_MAX,
   TL_TAG_TRUSTED_ATTESTOR,
   parseAddressCoordinate,
   parseAttestation,
@@ -31,6 +32,7 @@ import {
   getAddressCoordinate,
   parseTrustedAttestor,
   parseTrustedServiceProviderDelegations,
+  parseTrustedAttestors,
 } from '@/lib/attestation';
 import { formatKind, getKindName } from '@/lib/nostrKinds';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
@@ -42,6 +44,7 @@ import { TrustedServiceProviderDelegationDialog } from '@/components/attestr/Tru
 import { AssertionDetailDialog } from '@/components/attestr/AssertionDetailDialog';
 import { AttestationRequestDetailDialog } from '@/components/attestr/AttestationRequestDetailDialog';
 import { AttestorRecommendationDetailDialog } from '@/components/attestr/AttestorRecommendationDetailDialog';
+import { DelegatedTrustedAttestorCard, type AggregatedDelegatedTrust } from '@/components/attestr/DelegatedTrustedAttestorCard';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 interface ClientProfileLink {
@@ -217,6 +220,90 @@ export default function Profile() {
     enabled: !!pubkey,
   });
 
+  const delegatedTrustedAttestorsQuery = useQuery({
+    queryKey: ['nostr', 'profile-delegated-trusted-attestors', pubkey ?? ''],
+    queryFn: async () => {
+      if (!pubkey) return [];
+
+      const delegationEvents = await nostr.query([
+        { kinds: [TRUSTED_SERVICE_PROVIDERS_KIND], authors: [pubkey], limit: 20 },
+      ], { signal: AbortSignal.timeout(6000) });
+
+      const newestDelegation = delegationEvents.sort((a, b) => b.created_at - a.created_at)[0];
+      if (!newestDelegation) return [];
+
+      const delegationEntries = parseTrustedServiceProviderDelegations(newestDelegation);
+      if (delegationEntries.length === 0) return [];
+
+      const providerPolicies = new Map<string, Set<number>>();
+      for (const entry of delegationEntries) {
+        const existing = providerPolicies.get(entry.providerPubkey) ?? new Set<number>();
+        existing.add(entry.listKind);
+        providerPolicies.set(entry.providerPubkey, existing);
+      }
+
+      const providerPubkeys = [...providerPolicies.keys()];
+      if (providerPubkeys.length === 0) return [];
+
+      const providerListEvents = await nostr.query([
+        {
+          kinds: [TRUSTED_LISTS_KIND, TRUSTED_LISTS_KIND + 1, TRUSTED_LISTS_KIND + 2, TRUSTED_LISTS_KIND_MAX],
+          authors: providerPubkeys,
+          limit: 500,
+        },
+      ], { signal: AbortSignal.timeout(8000) });
+
+      const isAllowedProvider = (providerPubkey: string, eventKind: number) => {
+        const allowedKinds = providerPolicies.get(providerPubkey);
+        return allowedKinds ? allowedKinds.has(eventKind) : false;
+      };
+
+      const byAttestor = new Map<string, AggregatedDelegatedTrust>();
+
+      for (const event of providerListEvents) {
+        if (!isAllowedProvider(event.pubkey, event.kind)) continue;
+
+        const parsed = parseTrustedAttestors(event);
+        if (!parsed.kinds.length) continue;
+
+        if (parsed.isProviderOutput) {
+          if (parsed.subjectPubkey !== pubkey) continue;
+        }
+
+        for (const attestor of parsed.attestors) {
+          const existing = byAttestor.get(attestor);
+          if (existing) {
+            for (const k of parsed.kinds) {
+              if (!existing.kinds.includes(k)) existing.kinds.push(k);
+            }
+            if (!existing.providerPubkeys.includes(event.pubkey)) {
+              existing.providerPubkeys.push(event.pubkey);
+            }
+            if (event.created_at > existing.createdAt) {
+              existing.createdAt = event.created_at;
+            }
+          } else {
+            byAttestor.set(attestor, {
+              attestorPubkey: attestor,
+              kinds: [...parsed.kinds],
+              providerPubkeys: [event.pubkey],
+              createdAt: event.created_at,
+            });
+          }
+        }
+      }
+
+      return [...byAttestor.values()]
+        .map((t) => ({
+          ...t,
+          kinds: t.kinds.sort((a, b) => a - b),
+          providerPubkeys: t.providerPubkeys.sort((a, b) => a.localeCompare(b)),
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt);
+    },
+    enabled: !!pubkey,
+  });
+
   const authoredAssertionsQuery = useQuery({
     queryKey: ['nostr', 'profile-authored-assertions', pubkey ?? ''],
     queryFn: async () => {
@@ -289,6 +376,10 @@ export default function Profile() {
   const recommendationsFrom = useMemo(() => recommendationsFromQuery.data ?? [], [recommendationsFromQuery.data]);
   const proficiency = proficiencyQuery.data;
   const providerDelegations = providerDelegationsQuery.data;
+  const delegatedTrustedAttestors = useMemo(
+    () => delegatedTrustedAttestorsQuery.data ?? [],
+    [delegatedTrustedAttestorsQuery.data],
+  );
   const receivedAttestations = useMemo(() => receivedAttestationsQuery.data ?? [], [receivedAttestationsQuery.data]);
 
   const { data: assertionData } = useAssertionEvents(attestations);
@@ -691,26 +782,31 @@ export default function Profile() {
               <CardTitle>Trusted assertors</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {recommendationsFromQuery.isLoading ? (
+              {recommendationsFromQuery.isLoading || delegatedTrustedAttestorsQuery.isLoading ? (
                 <div className="space-y-2">
                   {[0, 1].map((row) => (
                     <Skeleton key={row} className="h-14 w-full" />
                   ))}
                 </div>
-              ) : recommendationsFrom.length === 0 ? (
+              ) : recommendationsFrom.length === 0 && delegatedTrustedAttestors.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No outgoing recommendations yet.</p>
               ) : (
-                recommendationsFrom.map((recommendation) => (
-                  <ProfileRecommendationCard
-                    key={recommendation.id}
-                    recommendation={recommendation}
-                    perspective="from"
-                    onUpdated={() => {
-                      void recommendationsFromQuery.refetch();
-                      void recommendationsToQuery.refetch();
-                    }}
-                  />
-                ))
+                <>
+                  {recommendationsFrom.map((recommendation) => (
+                    <ProfileRecommendationCard
+                      key={recommendation.id}
+                      recommendation={recommendation}
+                      perspective="from"
+                      onUpdated={() => {
+                        void recommendationsFromQuery.refetch();
+                        void recommendationsToQuery.refetch();
+                      }}
+                    />
+                  ))}
+                  {delegatedTrustedAttestors.map((trust) => (
+                    <DelegatedTrustedAttestorCard key={trust.attestorPubkey} trust={trust} />
+                  ))}
+                </>
               )}
             </CardContent>
           </Card>
