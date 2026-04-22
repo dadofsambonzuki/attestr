@@ -130,6 +130,21 @@ export default function Developers() {
                 />
                 <span className="font-medium text-slate-900">SafeBox</span>
               </a>
+
+              <a
+                href="https://ants.sh/"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
+              >
+                <img
+                  src="https://ants.sh/favicon-32x32.png"
+                  alt="ants logo"
+                  className="h-6 w-6 rounded-sm"
+                  loading="lazy"
+                />
+                <span className="font-medium text-slate-900">ants</span>
+              </a>
             </div>
           </CardContent>
         </Card>
