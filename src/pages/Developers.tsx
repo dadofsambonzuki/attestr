@@ -1,4 +1,4 @@
-import { Code2, ExternalLink, FileSearch, Send } from 'lucide-react';
+import { Code2, ExternalLink, FileSearch, Send, EyeOff, Fingerprint } from 'lucide-react';
 import { useSeoMeta } from '@unhead/react';
 
 import { AppHeader } from '@/components/AppHeader';
@@ -78,7 +78,7 @@ export default function Developers() {
                 className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
               >
                 <img
-                  src="https://amethyst.social/amethyst-logo.jpg"
+                  src="/images/clients/amethyst.jpg"
                   alt="Amethyst logo"
                   className="h-6 w-6 rounded-sm"
                   loading="lazy"
@@ -93,7 +93,7 @@ export default function Developers() {
                 className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
               >
                 <img
-                  src="https://www.nostria.app/favicon.ico"
+                  src="/images/clients/nostria.ico"
                   alt="Nostria logo"
                   className="h-6 w-6 rounded-sm"
                   loading="lazy"
@@ -108,7 +108,7 @@ export default function Developers() {
                 className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
               >
                 <img
-                  src="https://walletscrutiny.com/images/favicon-32x32.png"
+                  src="/images/clients/walletscrutiny.png"
                   alt="WalletScrutiny logo"
                   className="h-6 w-6 rounded-sm"
                   loading="lazy"
@@ -123,7 +123,7 @@ export default function Developers() {
                 className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
               >
                 <img
-                  src="https://getsafebox.app/static/favicon.ico"
+                  src="/images/clients/safebox.ico"
                   alt="SafeBox logo"
                   className="h-6 w-6 rounded-sm"
                   loading="lazy"
@@ -138,12 +138,47 @@ export default function Developers() {
                 className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
               >
                 <img
-                  src="https://ants.sh/favicon-32x32.png"
+                  src="/images/clients/ants.png"
                   alt="ants logo"
                   className="h-6 w-6 rounded-sm"
                   loading="lazy"
                 />
                 <span className="font-medium text-slate-900">ants</span>
+              </a>
+
+              <a
+                href="https://www.archipelago-foundation.org"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
+              >
+                <img
+                  src="/images/clients/archipelago.svg"
+                  alt="Archipelago logo"
+                  className="h-6 w-6 rounded-sm"
+                  loading="lazy"
+                />
+                <span className="font-medium text-slate-900">Archipelago</span>
+              </a>
+
+              <a
+                href="https://github.com/KC-Bitcoiners/bodarc"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
+              >
+                <Fingerprint className="h-6 w-6 rounded-sm text-slate-700" />
+                <span className="font-medium text-slate-900">bodarc</span>
+              </a>
+
+              <a
+                href="https://veil.forgesworn.dev/"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
+              >
+                <EyeOff className="h-6 w-6 rounded-sm text-slate-700" />
+                <span className="font-medium text-slate-900">Veil</span>
               </a>
             </div>
           </CardContent>
