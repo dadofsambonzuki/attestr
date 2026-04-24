@@ -51,8 +51,8 @@ const defaultConfig: AppConfig = {
   },
   featuredAttestations: [
     'naddr1qvzqqqru0upzq04ty37x8we4m73cup72zqhkmg5t4xuag6r3ja6rhh369vwcpthdqqsxxdrxx4jnwcfh8fnrgdpj8yer2en9xs6xvw33xumn2d34xqcrqvcym5a4c',
-    'naddr1qvzqqqru0upzq04ty37x8we4m73cup72zqhkmg5t4xuag6r3ja6rhh369vwcpthdqqsxxdrxx4jnwcfh8fsnqvec8psnyd3589snzw33xumngwfe8qmrsdsp4ge5a',
     'naddr1qvzqqqru0upzp384u7n44r8rdq74988lqcmggww998jjg0rtzfd6dpufrxy9djk8qqsxze34v9snswfc8fnx2vfs8pnx2cnz8yunww33xumnxwf5xy6nydqggcc8a',
+    'naddr1qvzqqqru0upzq04ty37x8we4m73cup72zqhkmg5t4xuag6r3ja6rhh369vwcpthdqqsxxdrxx4jnwcfh8fsnqvec8psnyd3589snzw33xumngwfe8qmrsdsp4ge5a',
   ],
 };
 
