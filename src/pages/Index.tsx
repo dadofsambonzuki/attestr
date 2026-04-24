@@ -14,7 +14,7 @@ import { useAttestationFeed } from '@/hooks/useAttestationFeed';
 import { useFeaturedAttestations } from '@/hooks/useFeaturedAttestations';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
 import { useAppContext } from '@/hooks/useAppContext';
-import { parseAttestation, parseAddressCoordinate } from '@/lib/attestation';
+import { parseAttestation, parseAddressCoordinate, getTagValue } from '@/lib/attestation';
 import { getKindName } from '@/lib/nostrKinds';
 import { encodeEventPointer, getProfilePath } from '@/lib/nostrEncodings';
 import { getNostrDisplayName } from '@/lib/nostrDisplay';
@@ -189,6 +189,10 @@ function RecentAttestationCard({ event, assertionEvent }: { event: NostrEvent; a
     : 'Unknown author';
   const asserterAvatarUrl = assertionEvent ? asserter.data?.metadata?.picture : undefined;
   const assertionContent = assertionEvent?.content.trim() ?? '';
+  const displayAssertionContent =
+    assertionKind === 37515 && assertionEvent
+      ? (getTagValue(assertionEvent, 'name') ?? getTagValue(assertionEvent, 'title') ?? assertionContent)
+      : assertionContent;
 
   return (
     <Link
@@ -242,7 +246,7 @@ function RecentAttestationCard({ event, assertionEvent }: { event: NostrEvent; a
               </Badge>
             </div>
             <p className="mt-1 line-clamp-1 text-[11px] text-slate-600">
-              {assertionContent || 'Assertion content unavailable.'}
+              {displayAssertionContent || 'Assertion content unavailable.'}
             </p>
           </div>
         </div>
