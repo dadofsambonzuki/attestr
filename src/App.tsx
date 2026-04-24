@@ -16,6 +16,7 @@ import { DMProvider, type DMConfig } from '@/components/DMProvider';
 import { PROTOCOL_MODE } from '@/lib/dmConstants';
 import { AppConfig } from '@/contexts/AppContext';
 import AppRouter from './AppRouter';
+import { Footer } from '@/components/Footer';
 
 const dmConfig: DMConfig = {
   enabled: true,
@@ -48,6 +49,7 @@ const defaultConfig: AppConfig = {
     ],
     updatedAt: 0,
   },
+  featuredAttestations: [],
 };
 
 export function App() {
@@ -65,6 +67,7 @@ export function App() {
                   <Suspense>
                     <AppRouter />
                   </Suspense>
+                  <Footer />
                 </TooltipProvider>
               </NWCProvider>
               </DMProvider>

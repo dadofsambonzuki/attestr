@@ -29,6 +29,7 @@ export function TestApp({ children }: TestAppProps) {
       ],
       updatedAt: 0,
     },
+    featuredAttestations: [],
   };
 
   return (

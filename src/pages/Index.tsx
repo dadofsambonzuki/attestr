@@ -11,7 +11,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AttestationStatusBadge } from '@/components/attestr/AttestationStatusBadge';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useAttestationFeed } from '@/hooks/useAttestationFeed';
+import { useFeaturedAttestations } from '@/hooks/useFeaturedAttestations';
 import { useAssertionEvents } from '@/hooks/useAssertionEvents';
+import { useAppContext } from '@/hooks/useAppContext';
 import { parseAttestation, parseAddressCoordinate } from '@/lib/attestation';
 import { getKindName } from '@/lib/nostrKinds';
 import { encodeEventPointer, getProfilePath } from '@/lib/nostrEncodings';
@@ -25,13 +27,20 @@ const Index = () => {
     description: 'Search assertions, publish attestations, and inspect trust signals with comments and zaps.',
   });
 
-  const { data: recentAttestations = [], isLoading } = useAttestationFeed({
+  const { config } = useAppContext();
+  const featuredNaddrs = config.featuredAttestations ?? [];
+
+  const { data: featuredAttestations = [], isLoading: isFeaturedLoading } = useFeaturedAttestations(featuredNaddrs);
+  const { data: recentAttestationsFeed = [], isLoading: isFeedLoading } = useAttestationFeed({
     query: '',
     attestors: [],
     statuses: [],
     assertionKinds: [],
     days: 30,
   }, 0, 3);
+
+  const recentAttestations = featuredNaddrs.length > 0 ? featuredAttestations : recentAttestationsFeed;
+  const isLoading = featuredNaddrs.length > 0 ? isFeaturedLoading : isFeedLoading;
   const { data: assertionData } = useAssertionEvents(recentAttestations);
 
   return (
