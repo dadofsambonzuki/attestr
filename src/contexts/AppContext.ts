@@ -14,6 +14,8 @@ export interface AppConfig {
   theme: Theme;
   /** NIP-65 relay list metadata */
   relayMetadata: RelayMetadata;
+  /** Featured attestation naddrs to display on the home page */
+  featuredAttestations: string[];
 }
 
 export interface AppContextType {

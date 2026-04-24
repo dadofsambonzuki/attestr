@@ -16,6 +16,7 @@ import { DMProvider, type DMConfig } from '@/components/DMProvider';
 import { PROTOCOL_MODE } from '@/lib/dmConstants';
 import { AppConfig } from '@/contexts/AppContext';
 import AppRouter from './AppRouter';
+import { Footer } from '@/components/Footer';
 
 const dmConfig: DMConfig = {
   enabled: true,
@@ -48,6 +49,11 @@ const defaultConfig: AppConfig = {
     ],
     updatedAt: 0,
   },
+  featuredAttestations: [
+    'naddr1qvzqqqru0upzq04ty37x8we4m73cup72zqhkmg5t4xuag6r3ja6rhh369vwcpthdqqsxxdrxx4jnwcfh8fnrgdpj8yer2en9xs6xvw33xumn2d34xqcrqvcym5a4c',
+    'naddr1qvzqqqru0upzp384u7n44r8rdq74988lqcmggww998jjg0rtzfd6dpufrxy9djk8qqsxze34v9snswfc8fnx2vfs8pnx2cnz8yunww33xumnxwf5xy6nydqggcc8a',
+    'naddr1qvzqqqru0upzq04ty37x8we4m73cup72zqhkmg5t4xuag6r3ja6rhh369vwcpthdqqsxxdrxx4jnwcfh8fsnqvec8psnyd3589snzw33xumngwfe8qmrsdsp4ge5a',
+  ],
 };
 
 export function App() {
@@ -65,6 +71,7 @@ export function App() {
                   <Suspense>
                     <AppRouter />
                   </Suspense>
+                  <Footer />
                 </TooltipProvider>
               </NWCProvider>
               </DMProvider>
