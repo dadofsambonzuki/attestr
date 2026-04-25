@@ -8,7 +8,7 @@ export function Footer() {
           rel="noopener noreferrer"
           className="text-xs text-slate-500 transition hover:text-slate-700"
         >
-          Vibed with MKstack 💜
+          Vibed with MKStack 💜
         </a>
       </div>
     </footer>
