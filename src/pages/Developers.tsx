@@ -63,7 +63,7 @@ export default function Developers() {
                 className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
               >
                 <img
-                  src="/images/attestr-icon.png"
+                  src="/favicon/favicon.svg"
                   alt="Attestr logo"
                   className="h-6 w-6 rounded-sm"
                   loading="lazy"
