@@ -132,21 +132,6 @@ export default function Developers() {
               </a>
 
               <a
-                href="https://ants.sh/"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
-              >
-                <img
-                  src="/images/clients/ants.png"
-                  alt="ants logo"
-                  className="h-6 w-6 rounded-sm"
-                  loading="lazy"
-                />
-                <span className="font-medium text-slate-900">ants</span>
-              </a>
-
-              <a
                 href="https://www.archipelago-foundation.org"
                 target="_blank"
                 rel="noreferrer noopener"
@@ -159,6 +144,21 @@ export default function Developers() {
                   loading="lazy"
                 />
                 <span className="font-medium text-slate-900">Archipelago</span>
+              </a>
+
+              <a
+                href="https://ditto.pub/"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 sm:w-auto"
+              >
+                <img
+                  src="/images/clients/ditto.ico"
+                  alt="Ditto logo"
+                  className="h-6 w-6 rounded-sm"
+                  loading="lazy"
+                />
+                <span className="font-medium text-slate-900">Ditto</span>
               </a>
 
               <a
