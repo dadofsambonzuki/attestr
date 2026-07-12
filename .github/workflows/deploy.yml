@@ -1,0 +1,39 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-attestr
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, attestr]
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install and build
+        run: |
+          npm install
+          npm run build
+
+      - name: Deploy to /var/www/attestr
+        run: |
+          rsync -a --delete dist/ /var/www/attestr/
+
+      - name: Verify site
+        run: |
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://attestr.xyz)
+          echo "attestr.xyz returned HTTP $HTTP_CODE"
+          [ "$HTTP_CODE" = "200" ] || exit 1
