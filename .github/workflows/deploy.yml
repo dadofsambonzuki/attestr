@@ -1,8 +1,11 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches: [main]
+  # Deploys are driven by the nostr deploy watcher on the VPS, which pulls this
+  # repository's canonical copy from grasp.day.ag and runs the same deploy
+  # script this workflow runs. Keeping the push trigger as well deployed every
+  # publish twice, from two paths. Manual dispatch stays as a fallback, but the
+  # self-hosted runner is stopped, so start that service again to use it.
   workflow_dispatch:
 
 concurrency:
