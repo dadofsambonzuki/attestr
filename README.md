@@ -1,3 +1,11 @@
+> **This GitHub repository is a read-only mirror.**
+>
+> The canonical home is [https://gitworkshop.dev/nathan@day.ag/attestr](https://gitworkshop.dev/nathan@day.ag/attestr). Clone it with Git and Nostr:
+> `git clone nostr://nathan@day.ag/attestr`
+>
+> Issues, pull requests and releases live there. Anything opened here may be
+> closed without action.
+
 # Attestr: Notaries on Nostr
 
 **Attestr** is an attestations marketplace for Nostr — a platform that enables anyone to become a "pleb oracle" and participate in decentralized verification of events, identities, and claims.
