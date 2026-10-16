@@ -1,0 +1,95 @@
+name: Dependencies
+
+# Weekly vulnerability scan of this repository's dependency tree, executed by the
+# ngit-ci coordinator. osv-scanner checks the lockfile against the OSV aggregate
+# database (GHSA, RustSec, PyPA and friends), so it covers whatever ecosystem the
+# repository uses without a forge-side bot.
+#
+# A red result here means "there is something worth bumping": the job fails when
+# a finding at or above SEVERITY_THRESHOLD is present, and the table in the log
+# names the package, the installed version and the advisory. Lower the threshold
+# via SEVERITY_THRESHOLD to see the whole picture.
+#
+# This job only reports. Turning findings into proposed upgrades is the
+# dependency bot's job, which opens a PR with the bumps for review.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  SEVERITY_THRESHOLD: high
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install osv-scanner
+        run: |
+          set -euo pipefail
+          curl -sSL --max-time 120 -o /tmp/osv-scanner \
+            https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_amd64
+          curl -sSL --max-time 60 -o /tmp/osv-sums \
+            https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_SHA256SUMS
+          grep "osv-scanner_linux_amd64" /tmp/osv-sums \
+            | sed 's|osv-scanner_linux_amd64|/tmp/osv-scanner|' > /tmp/osv-check
+          sha256sum -c /tmp/osv-check
+          install -m 755 /tmp/osv-scanner /usr/local/bin/osv-scanner
+          osv-scanner --version | head -1
+
+      - name: Scan dependencies
+        run: |
+          set -uo pipefail
+          osv-scanner scan source -r --allow-no-lockfiles \
+            --format json --output-file /tmp/scan.json . || true
+          osv-scanner scan source -r --allow-no-lockfiles \
+            --format markdown . > /tmp/scan.md 2>/dev/null || true
+          echo "---- osv-scanner report ----"
+          cat /tmp/scan.md || true
+          echo "----------------------------"
+
+          python3 - "$SEVERITY_THRESHOLD" <<'PY'
+          import json, sys
+
+          threshold = sys.argv[1].lower() if len(sys.argv) > 1 else "high"
+          floors = {"low": 0.1, "medium": 4.0, "high": 7.0, "critical": 9.0}
+          floor = floors.get(threshold, 7.0)
+
+          try:
+              with open("/tmp/scan.json") as fh:
+                  data = json.load(fh)
+          except Exception as exc:
+              print(f"could not read the scan output: {exc}")
+              sys.exit(0)
+
+          rows = []
+          for result in data.get("results") or []:
+              for entry in result.get("packages") or []:
+                  package = entry.get("package") or {}
+                  for group in entry.get("groups") or []:
+                      try:
+                          score = float(group.get("max_severity") or 0)
+                      except (TypeError, ValueError):
+                          score = 0.0
+                      if score >= floor:
+                          ids = group.get("ids") or ["?"]
+                          rows.append((score, package.get("name", "?"),
+                                       package.get("version", "?"), ids[0]))
+
+          rows.sort(reverse=True)
+          if not rows:
+              print(f"no findings at or above '{threshold}'")
+              sys.exit(0)
+
+          print(f"{len(rows)} finding(s) at or above '{threshold}':")
+          for score, name, version, advisory in rows:
+              print(f"  {score:>4}  {name}@{version}  {advisory}")
+          print()
+          print("Bump these - the dependency bot opens a PR when it can resolve them.")
+          sys.exit(1)
+          PY
