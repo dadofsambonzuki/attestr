@@ -40,7 +40,10 @@ jobs:
             | sed 's|osv-scanner_linux_amd64|/tmp/osv-scanner|' > /tmp/osv-check
           sha256sum -c /tmp/osv-check
           install -m 755 /tmp/osv-scanner /usr/local/bin/osv-scanner
-          osv-scanner --version | head -1
+          # No pipe here: with `set -euo pipefail`, `osv-scanner --version | head -1`
+          # fails the step whenever head exits before the writer finishes, because
+          # the writer dies of SIGPIPE and pipefail reports 141.
+          osv-scanner --version
 
       - name: Scan dependencies
         run: |
