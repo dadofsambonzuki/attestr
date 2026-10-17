@@ -14,7 +14,7 @@ import {
 import { formatKind } from '@/lib/nostrKinds';
 
 const attestationNipUrl = 'https://nostrhub.io/naddr1qvzqqqrcvypzp384u7n44r8rdq74988lqcmggww998jjg0rtzfd6dpufrxy9djk8qyfhwumn8ghj7un9d3shjtnyv9ujuct89uqqcct5w3jhxarpw35k7mnnaawl4h';
-const githubRepoUrl = 'https://github.com/dadofsambonzuki/attestr';
+const gitworkshopRepoUrl = 'https://gitworkshop.dev/nathan@day.ag/attestr';
 
 export default function Developers() {
   const LEGACY_TRUSTED_ATTESTORS_KIND = 31874;
@@ -44,8 +44,8 @@ export default function Developers() {
               </a>
             </Button>
             <Button variant="outline" asChild className="w-full sm:w-auto">
-              <a href={githubRepoUrl} target="_blank" rel="noreferrer noopener">
-                View GitHub Repo
+              <a href={gitworkshopRepoUrl} target="_blank" rel="noreferrer noopener">
+                View Repo on GitWorkshop
                 <ExternalLink className="ml-2 h-4 w-4" />
               </a>
             </Button>
