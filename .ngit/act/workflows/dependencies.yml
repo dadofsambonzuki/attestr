@@ -6,9 +6,13 @@ name: Dependencies
 # repository uses without a forge-side bot.
 #
 # A red result here means "there is something worth bumping": the job fails when
-# a finding at or above SEVERITY_THRESHOLD is present, and the table in the log
-# names the package, the installed version and the advisory. Lower the threshold
-# via SEVERITY_THRESHOLD to see the whole picture.
+# a finding at or above SEVERITY_THRESHOLD is present and the advisory names a
+# version to move to. One that marks every published release as affected is
+# listed but does not fail the job - there is nothing to bump to until upstream
+# ships a fix, and a permanently red job would hide the findings that are
+# actionable. The table in the log names the package, the installed version and
+# the advisory. Lower the threshold via SEVERITY_THRESHOLD to see the whole
+# picture.
 #
 # This job only reports. Turning findings into proposed upgrades is the
 # dependency bot's job, which opens a PR with the bumps for review.
@@ -71,9 +75,22 @@ jobs:
               sys.exit(0)
 
           rows = []
+          unfixable = []
           for result in data.get("results") or []:
               for entry in result.get("packages") or []:
                   package = entry.get("package") or {}
+                  # A finding is only actionable when the advisory names a version
+                  # to move to. Some advisories mark every published release of a
+                  # package as affected, and those cannot be bumped away until
+                  # upstream ships a fix, so they are reported but do not fail.
+                  fixes = {
+                      event.get("fixed")
+                      for vulnerability in entry.get("vulnerabilities") or []
+                      for affected in vulnerability.get("affected") or []
+                      for ranges in affected.get("ranges") or []
+                      for event in ranges.get("events") or []
+                      if event.get("fixed")
+                  }
                   for group in entry.get("groups") or []:
                       try:
                           score = float(group.get("max_severity") or 0)
@@ -81,12 +98,23 @@ jobs:
                           score = 0.0
                       if score >= floor:
                           ids = group.get("ids") or ["?"]
-                          rows.append((score, package.get("name", "?"),
-                                       package.get("version", "?"), ids[0]))
+                          row = (score, package.get("name", "?"),
+                                 package.get("version", "?"), ids[0])
+                          (rows if fixes else unfixable).append(row)
 
           rows.sort(reverse=True)
+          unfixable.sort(reverse=True)
+
+          if unfixable:
+              print(f"{len(unfixable)} finding(s) at or above '{threshold}' with no fix published yet:")
+              for score, name, version, advisory in unfixable:
+                  print(f"  {score:>4}  {name}@{version}  {advisory}")
+              print("Nothing to bump to: every release of the package is affected. Tracked here,")
+              print("and re-checked every run, but a red job would not make it any safer.")
+
           if not rows:
-              print(f"no findings at or above '{threshold}'")
+              if not unfixable:
+                  print(f"no findings at or above '{threshold}'")
               sys.exit(0)
 
           print(f"{len(rows)} finding(s) at or above '{threshold}':")
