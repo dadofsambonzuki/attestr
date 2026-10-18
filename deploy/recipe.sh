@@ -19,9 +19,11 @@ APP=attestr
 WEB_ROOT=/var/www/attestr
 log() { printf '[%s] %s\n' "$APP" "$*"; }
 
-if [ -n "$(git status --porcelain)" ]; then
-  log "refusing to deploy: the checkout has modifications"
-  git status --short
+# Tracked files only: an untracked build artefact or helper script sits happily
+# there and does not stop git taking the tip, so it is not a reason to refuse.
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  log "refusing to deploy: the checkout has modified tracked files"
+  git status --porcelain --untracked-files=no
   exit 1
 fi
 
