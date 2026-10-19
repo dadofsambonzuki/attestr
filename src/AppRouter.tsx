@@ -25,8 +25,12 @@ export function AppRouter() {
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/developers" element={<Developers />} />
         <Route path="/profile/:identifier" element={<Profile />} />
-        {/* NIP-19 route for npub1, note1, naddr1, nevent1, nprofile1 */}
+        {/* NIP-19 route for npub1, note1, naddr1, nevent1, nprofile1, plus the NIP-89
+            handler-style /e/, /p/, /a/ aliases that clients may deep-link with. */}
         <Route path="/:nip19" element={<NIP19Page />} />
+        <Route path="/e/:nip19" element={<NIP19Page />} />
+        <Route path="/p/:nip19" element={<NIP19Page />} />
+        <Route path="/a/:nip19" element={<NIP19Page />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
