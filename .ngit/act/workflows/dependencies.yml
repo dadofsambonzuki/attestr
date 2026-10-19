@@ -18,8 +18,8 @@ name: Dependencies
 # dependency bot's job, which opens a PR with the bumps for review.
 
 on:
-  push:
-    branches: [main]
+  # Weekly, not per-push: the dependency bot (nostr-deps-weekly) dispatches this
+  # workflow itself, so it is not a push check and never gates a deploy.
   workflow_dispatch:
 
 env:

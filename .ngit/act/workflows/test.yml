@@ -1,0 +1,47 @@
+name: Test
+
+# The project's gates, run on every push and pull request by an ngit-ci
+# coordinator through act. This is the check that has to be green before the
+# deploy watcher will deploy the commit.
+#
+# Gates run as separate steps (typecheck, lint, unit tests, build) so a failure
+# says which gate failed and the steps after it still report. Installs use
+# `npm ci` from the committed lockfile so a dependency bump is a reviewed
+# commit, never whatever npm resolves on the day. No `cache: npm` on
+# setup-node: the act runtime provides no GITHUB_TOKEN, and the action's cache
+# API needs one.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies from the committed lockfile
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx eslint
+
+      - name: Unit tests
+        run: npx vitest run --reporter=dot --silent
+
+      - name: Build
+        run: npx vite build -l error
