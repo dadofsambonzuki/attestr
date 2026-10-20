@@ -10,6 +10,24 @@ export const ATTESTOR_PROFICIENCY_DECLARATION_KIND = 11871;
 export const TRUSTED_LISTS_KIND = 30392;
 export const TRUSTED_LISTS_KIND_MAX = 30395;
 
+// Attestr's own relay. It stores the attestation kinds and sweeps them from the
+// public relays, so it is the primary source for attestation queries.
+export const ATTESTR_RELAY_URL = 'wss://relay.attestr.xyz';
+export const ATTESTATION_RELAY_KINDS = [
+  ATTESTOR_PROFICIENCY_DECLARATION_KIND, // 11871
+  ATTESTATION_KIND, // 31871
+  ATTESTATION_REQUEST_KIND, // 31872
+  ATTESTOR_RECOMMENDATION_KIND, // 31873
+  31874, // legacy trusted attestors
+  30382, // NIP-85 trusted assertions, pubkey subject
+  30383, // NIP-85 trusted assertions, event subject
+  30384, // NIP-85 trusted assertions, addressable subject
+  TRUSTED_LISTS_KIND, // 30392
+  TRUSTED_LISTS_KIND + 1, // 30393
+  TRUSTED_LISTS_KIND + 2, // 30394
+  TRUSTED_LISTS_KIND_MAX, // 30395
+];
+
 // NIP-85 trusted service providers list
 export const TRUSTED_SERVICE_PROVIDERS_KIND = 10040;
 

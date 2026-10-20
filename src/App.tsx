@@ -14,6 +14,7 @@ import { AppProvider } from '@/components/AppProvider';
 import { NWCProvider } from '@/contexts/NWCContext';
 import { DMProvider, type DMConfig } from '@/components/DMProvider';
 import { PROTOCOL_MODE } from '@/lib/dmConstants';
+import { ATTESTR_RELAY_URL } from '@/lib/attestation';
 import { AppConfig } from '@/contexts/AppContext';
 import AppRouter from './AppRouter';
 import { Footer } from '@/components/Footer';
@@ -43,6 +44,7 @@ const defaultConfig: AppConfig = {
   theme: "light",
   relayMetadata: {
     relays: [
+      { url: ATTESTR_RELAY_URL, read: true, write: true },
       { url: 'wss://relay.ditto.pub', read: true, write: true },
       { url: 'wss://relay.primal.net', read: true, write: true },
       { url: 'wss://relay.damus.io', read: true, write: true },
