@@ -19,6 +19,25 @@ export function touchesAttestationKinds(filters: NostrFilter[]): boolean {
 }
 
 /**
+ * Query the attestr relay *and* the user's read relays together.
+ *
+ * For events that are not attestation kinds but are still worth finding in our
+ * relay - the assertions an attestation points at, which the relay crawls in.
+ * They are small id/coordinate lookups, so there is nothing to prioritise: ask
+ * everywhere at once, including the attestr relay even when the user's own
+ * relay list does not mention it.
+ */
+export function queryIncludingAttestr(
+  nostr: NPool,
+  filters: NostrFilter[],
+  readRelays: string[],
+  opts: { signal?: AbortSignal } = {},
+): Promise<NostrEvent[]> {
+  const relays = Array.from(new Set([ATTESTR_RELAY_URL, ...readRelays]));
+  return nostr.query(filters, { relays, signal: opts.signal });
+}
+
+/**
  * Merge event batches into one result set.
  *
  * Addressable and replaceable events are resolved to their newest version

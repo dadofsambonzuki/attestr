@@ -4,11 +4,14 @@ import { useNostr } from '@nostrify/react';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 import { parseAddressCoordinate, parseAssertionRef, type AssertionRef } from '@/lib/attestation';
+import { queryIncludingAttestr } from '@/lib/attestationPool';
+import { useAppContext } from '@/hooks/useAppContext';
 
 type AssertionEventMap = Record<string, NostrEvent>;
 
 export function useAssertionEvents(eventsWithAssertionRef: NostrEvent[]) {
   const { nostr } = useNostr();
+  const { config } = useAppContext();
 
   const refs = useMemo(() => {
     const values: AssertionRef[] = [];
@@ -24,10 +27,15 @@ export function useAssertionEvents(eventsWithAssertionRef: NostrEvent[]) {
     queryFn: async () => {
       const eIds = refs.filter((r) => r.type === 'e').map((r) => r.value);
       const aCoords = refs.filter((r) => r.type === 'a').map((r) => r.value);
+      const readRelays = config.relayMetadata.relays
+        .filter((relay) => relay.read)
+        .map((relay) => relay.url);
 
       const queries = [] as Promise<NostrEvent[]>[];
       if (eIds.length > 0) {
-        queries.push(nostr.query([{ ids: eIds, limit: eIds.length }], { signal: AbortSignal.timeout(5000) }));
+        queries.push(queryIncludingAttestr(nostr, [{ ids: eIds, limit: eIds.length }], readRelays, {
+          signal: AbortSignal.timeout(5000),
+        }));
       }
 
       if (aCoords.length > 0) {
@@ -42,7 +50,9 @@ export function useAssertionEvents(eventsWithAssertionRef: NostrEvent[]) {
           }));
 
         if (coordinateFilters.length > 0) {
-          queries.push(nostr.query(coordinateFilters, { signal: AbortSignal.timeout(5000) }));
+          queries.push(queryIncludingAttestr(nostr, coordinateFilters, readRelays, {
+            signal: AbortSignal.timeout(5000),
+          }));
         }
       }
 

@@ -9,6 +9,8 @@ import { AssertionDetailContent } from '@/components/attestr/AssertionDetailCont
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getProfilePath } from '@/lib/nostrEncodings';
+import { queryIncludingAttestr } from '@/lib/attestationPool';
+import { useAppContext } from '@/hooks/useAppContext';
 import NotFound from './NotFound';
 
 type ResolvedNip19 =
@@ -19,6 +21,7 @@ type ResolvedNip19 =
 export function NIP19Page() {
   const { nip19: identifier } = useParams<{ nip19: string }>();
   const { nostr } = useNostr();
+  const { config } = useAppContext();
 
   useSeoMeta({
     title: 'Attestr',
@@ -33,21 +36,25 @@ export function NIP19Page() {
     queryFn: async () => {
       if (!decoded || (decoded.type !== 'event' && decoded.type !== 'address')) return null;
 
+      const readRelays = config.relayMetadata.relays
+        .filter((relay) => relay.read)
+        .map((relay) => relay.url);
+
       if (decoded.type === 'event') {
-        const [event] = await nostr.query([{ ids: [decoded.id], limit: 1 }], {
+        const [event] = await queryIncludingAttestr(nostr, [{ ids: [decoded.id], limit: 1 }], readRelays, {
           signal: AbortSignal.timeout(6000),
         });
         return event ?? null;
       }
 
-      const [event] = await nostr.query([
+      const [event] = await queryIncludingAttestr(nostr, [
         {
           kinds: [decoded.kind],
           authors: [decoded.pubkey],
           '#d': [decoded.identifier],
           limit: 1,
         },
-      ], {
+      ], readRelays, {
         signal: AbortSignal.timeout(6000),
       });
 
