@@ -22,6 +22,7 @@ const KIND_NAME_BY_NUMBER: Record<number, string> = {
   44: 'Channel Mute User',
   1063: 'File Metadata',
   1068: 'Poll',
+  1040: 'OpenTimestamps Attestation',
   1059: 'Gift Wrap',
   1111: 'Comment',
   1311: 'Live Chat Message',

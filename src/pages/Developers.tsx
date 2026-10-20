@@ -1,4 +1,4 @@
-import { Code2, ExternalLink, FileSearch, Send, EyeOff, Fingerprint } from 'lucide-react';
+import { Code2, ExternalLink, FileSearch, Send, EyeOff, Fingerprint, Server } from 'lucide-react';
 import { useSeoMeta } from '@unhead/react';
 
 import { AppHeader } from '@/components/AppHeader';
@@ -15,6 +15,14 @@ import { formatKind } from '@/lib/nostrKinds';
 
 const attestationNipUrl = 'https://nostrhub.io/naddr1qvzqqqrcvypzp384u7n44r8rdq74988lqcmggww998jjg0rtzfd6dpufrxy9djk8qyfhwumn8ghj7un9d3shjtnyv9ujuct89uqqcct5w3jhxarpw35k7mnnaawl4h';
 const gitworkshopRepoUrl = 'https://gitworkshop.dev/nathan@day.ag/attestr';
+const relayUrl = 'wss://relay.attestr.xyz';
+
+// Kinds the attestr relay accepts. Kept in step with the relay's write policy
+// (/opt/strfry/attestr/policy.py on the VPS).
+const relayAttestationKinds = [
+  1040, 11871, 31871, 31872, 31873, 31874, 10040, 30382, 30383, 30384, 30392, 30393, 30394, 30395,
+];
+const relayCommonKinds = [0, 1, 3, 5, 6, 7, 16, 1111, 9735, 10002];
 
 export default function Developers() {
   const LEGACY_TRUSTED_ATTESTORS_KIND = 31874;
@@ -51,6 +59,86 @@ export default function Developers() {
             </Button>
           </div>
         </section>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Server className="h-5 w-5" />
+              Attestation Relay
+            </CardTitle>
+            <CardDescription>
+              <span className="inline-flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" className="font-mono text-[11px]">{relayUrl}</Badge>
+                <Badge variant="outline">No AUTH required</Badge>
+                <Badge variant="outline">Sweeps public relays</Badge>
+              </span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-slate-700">
+            <p>
+              A relay run for attestation events. It stores the attestation kinds below alongside the usual
+              social kinds, and it sweeps the attestation kinds from public relays, so attestations published
+              elsewhere are readable here too.
+            </p>
+
+            <div className="space-y-2">
+              <p className="font-medium text-slate-900">Attestation kinds</p>
+              <div className="flex flex-wrap gap-2">
+                {relayAttestationKinds.map((kind) => (
+                  <Badge key={kind} variant="outline" className="font-mono text-[11px]">
+                    {formatKind(kind)}
+                  </Badge>
+                ))}
+              </div>
+              <p className="pt-2 font-medium text-slate-900">Common kinds</p>
+              <div className="flex flex-wrap gap-2">
+                {relayCommonKinds.map((kind) => (
+                  <Badge key={kind} variant="outline" className="font-mono text-[11px]">
+                    {formatKind(kind)}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="flex min-w-0 flex-col gap-2">
+                <p className="font-medium text-slate-900">Query attestations</p>
+                <pre className="w-full max-w-full overflow-x-auto rounded-md border bg-slate-50 p-3 text-[11px] text-slate-800 sm:text-xs flex-1">
+{`const relay = nostr.relay('${relayUrl}');
+
+const attestations = await relay.query([{
+  kinds: [${ATTESTATION_KIND}],
+  '#e': [assertionEventId],
+  limit: 50,
+}]);`}
+                </pre>
+              </div>
+
+              <div className="flex min-w-0 flex-col gap-2">
+                <p className="font-medium text-slate-900">Publish and read with nak</p>
+                <pre className="w-full max-w-full overflow-x-auto rounded-md border bg-slate-50 p-3 text-[11px] text-slate-800 sm:text-xs flex-1">
+{`nak event -k ${ATTESTATION_KIND} \\
+  -t d=my-attestation \\
+  -t e=<assertion-event-id> \\
+  -t s=valid \\
+  -c 'Evidence reviewed.' \\
+  ${relayUrl}
+
+nak req -k ${ATTESTATION_KIND} -l 20 ${relayUrl}`}
+                </pre>
+              </div>
+            </div>
+
+            <ul className="list-disc space-y-1 pl-5">
+              <li>
+                Writes are capped at 20 events per minute per IP; any kind outside the lists above is refused
+                with <code className="font-mono text-xs">blocked: kind &lt;kind&gt;</code>.
+              </li>
+              <li>Reads are unrestricted and no NIP-42 authentication is needed.</li>
+              <li>Kinds 4 and 1059 are not stored here — keep direct messages on a DM-capable relay.</li>
+            </ul>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
