@@ -3,6 +3,7 @@ import { NostrEvent, NostrFilter, NPool, NRelay1 } from '@nostrify/nostrify';
 import { NostrContext } from '@nostrify/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAppContext } from '@/hooks/useAppContext';
+import { ATTESTR_RELAY_URL, ATTESTATION_RELAY_KINDS } from '@/lib/attestation';
 
 interface NostrProviderProps {
   children: React.ReactNode;
@@ -42,6 +43,19 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
 
         for (const url of readRelays) {
           routes.set(url, filters);
+        }
+
+        // The attestr relay is the primary source for attestation kinds. Route those
+        // filters there even when the user's own relay list omits it, so attestations
+        // swept from the public relays are found without a manual relay change.
+        if (!readRelays.includes(ATTESTR_RELAY_URL)) {
+          const attestationFilters = filters.filter((filter) =>
+            (filter.kinds ?? []).some((kind) => ATTESTATION_RELAY_KINDS.includes(kind)),
+          );
+
+          if (attestationFilters.length > 0) {
+            routes.set(ATTESTR_RELAY_URL, attestationFilters);
+          }
         }
 
         return routes;
