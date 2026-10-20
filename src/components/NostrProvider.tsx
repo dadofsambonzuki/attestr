@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from 'react';
-import { NostrEvent, NostrFilter, NPool, NRelay1 } from '@nostrify/nostrify';
+import { NostrEvent, NostrFilter, NRelay1 } from '@nostrify/nostrify';
 import { NostrContext } from '@nostrify/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAppContext } from '@/hooks/useAppContext';
 import { ATTESTR_RELAY_URL, ATTESTATION_RELAY_KINDS } from '@/lib/attestation';
+import { AttestationPriorityPool } from '@/lib/attestationPool';
 
 interface NostrProviderProps {
   children: React.ReactNode;
@@ -16,7 +17,7 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
   const queryClient = useQueryClient();
 
   // Create NPool instance only once
-  const pool = useRef<NPool | undefined>(undefined);
+  const pool = useRef<AttestationPriorityPool | undefined>(undefined);
 
   // Use refs so the pool always has the latest data
   const relayMetadata = useRef(config.relayMetadata);
@@ -29,7 +30,7 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
 
   // Initialize NPool only once
   if (!pool.current) {
-    pool.current = new NPool({
+    pool.current = new AttestationPriorityPool({
       open(url: string) {
         return new NRelay1(url);
       },
@@ -71,7 +72,9 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
         return [...allRelays];
       },
       eoseTimeout: 200,
-    });
+    }, () => relayMetadata.current.relays
+      .filter((relay) => relay.read)
+      .map((relay) => relay.url));
   }
 
   return (
