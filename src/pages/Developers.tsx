@@ -79,7 +79,7 @@ export default function Developers() {
               A relay run for attestation events. It stores the attestation kinds below alongside the usual
               social kinds, and it sweeps the attestation kinds from public relays, so attestations published
               elsewhere are readable here too. Attestr reads from it first, then adds anything else it finds
-              on your own relays.
+              on your own relays, and publishes attestations to it even when it is not in your relay list.
             </p>
 
             <div className="space-y-2">

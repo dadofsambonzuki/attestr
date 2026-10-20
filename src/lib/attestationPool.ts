@@ -89,6 +89,36 @@ function withTimeout(promise: Promise<NostrEvent[]>, ms: number): Promise<NostrE
 }
 
 /**
+ * Where an event should be published.
+ *
+ * Attestation traffic always reaches the attestr relay, even when the author's
+ * NIP-65 list does not name it: an attestation published only elsewhere waits
+ * for the relay's 15-minute sweep, and a revocation that never arrives is
+ * worse than one that arrives twice. Deletions and comments are included when
+ * their `k` tag names an attestation kind.
+ */
+export function routeEvent(event: NostrEvent, writeRelays: string[]): string[] {
+  const relays = new Set(writeRelays);
+
+  const kTags = event.tags
+    .filter(([name]) => name === 'k')
+    .map(([, value]) => Number.parseInt(value, 10))
+    .filter((kind) => Number.isFinite(kind));
+
+  const referencesAttestationKind = kTags.some((kind) => ATTESTATION_RELAY_KINDS.includes(kind));
+
+  if (
+    ATTESTATION_RELAY_KINDS.includes(event.kind)
+    || (event.kind === 5 && referencesAttestationKind)
+    || (event.kind === 1111 && referencesAttestationKind)
+  ) {
+    relays.add(ATTESTR_RELAY_URL);
+  }
+
+  return [...relays];
+}
+
+/**
  * The relay pool, with attestation reads answered attestr-first.
  *
  * A plain `NPool` sends every filter to every read relay at once, so the

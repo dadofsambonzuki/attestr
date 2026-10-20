@@ -4,7 +4,7 @@ import { NostrContext } from '@nostrify/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAppContext } from '@/hooks/useAppContext';
 import { ATTESTR_RELAY_URL, ATTESTATION_RELAY_KINDS } from '@/lib/attestation';
-import { AttestationPriorityPool } from '@/lib/attestationPool';
+import { AttestationPriorityPool, routeEvent } from '@/lib/attestationPool';
 
 interface NostrProviderProps {
   children: React.ReactNode;
@@ -61,15 +61,13 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
 
         return routes;
       },
-      eventRouter(_event: NostrEvent) {
+      eventRouter(event: NostrEvent) {
         // Get write relays from metadata
         const writeRelays = relayMetadata.current.relays
           .filter(r => r.write)
           .map(r => r.url);
 
-        const allRelays = new Set<string>(writeRelays);
-
-        return [...allRelays];
+        return routeEvent(event, writeRelays);
       },
       eoseTimeout: 200,
     }, () => relayMetadata.current.relays
